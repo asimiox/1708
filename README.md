@@ -42,7 +42,18 @@ npm run lint
 
 ## Native port status
 
-A native C/Termux port is a separate workstream. Do not assume that the native port is implemented or feature-parity verified based only on this web repository. Before replacing an existing native build, compare every mode, token rule, legality check, puzzle generator, and win/loss condition against the web source and run a parity test suite.
+An initial terminal-native C port is available at [`termux/1708.c`](termux/1708.c). It supports Classic, Founder, and Practice starting boards, the five operations, token spending, and win/loss checks. It is **not yet feature-parity verified**: Daily mode, solvability-aware puzzle generation, and a native regression test suite are not implemented. Treat it as an initial port, not a verified replacement for the web game.
+
+Build on Termux with Clang:
+
+```sh
+pkg install clang
+gcc --version # optional compiler check; Termux normally provides clang
+clang termux/1708.c -O2 -Wall -Wextra -o 1708
+./1708
+```
+
+Before requesting official Termux packaging, compile and test the program on-device, then add packaging metadata and verify the native rules against the web implementation.
 
 ## Attribution
 
