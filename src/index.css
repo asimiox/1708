@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  /* Strict 60-30-10 Palette */
+  /* Primary 60% (backgrounds and surfaces) */
+  --paper: #F5EFE4;
+  --paper-2: #FBF8F1;
+  --surface: #FBF8F1;
+  --surface-alt: #F5EFE4;
+
+  /* Secondary 30% (all text, icons, lines, tile numerals, logo) */
+  --ink: #231F1A;
+  --ink-secondary: rgba(35, 31, 26, 0.65);
+  --ink-muted: rgba(35, 31, 26, 0.65);
+  --ink-dimmed: rgba(35, 31, 26, 0.35);
+  --border: rgba(35, 31, 26, 0.14);
+  --border-subtle: rgba(35, 31, 26, 0.14);
+
+  /* Accent 10% (maximum) */
+  --accent: #9A5B34;
+  --accent-light: rgba(154, 91, 52, 0.08);
+  --accent-subtle: rgba(154, 91, 52, 0.18);
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+}
+
+.font-serif {
+  font-family: 'Bodoni Moda', serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes subtle-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.animate-shake {
+  animation: subtle-shake 0.25s ease-in-out;
+}

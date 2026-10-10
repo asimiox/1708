@@ -1,0 +1,32 @@
+{
+  "name": "1708",
+  "short_name": "1708",
+  "description": "A daily number puzzle. Reach 1708 using 5 tiles and 9 operation tokens. Developed by Asim Nawaz.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5EFE4",
+  "theme_color": "#F5EFE4",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#F5EFE4"/>
+  <!-- Subtle border -->
+  <rect x="32" y="32" width="1136" height="566" rx="24" fill="none" stroke="#E5DDCF" stroke-width="2"/>
+  
+  <!-- Left content -->
+  <!-- Large 1708 wordmark in high contrast serif -->
+  <text x="110" y="300" font-family="'Bodoni Moda', 'Playfair Display', Georgia, serif" font-size="140" font-weight="600" letter-spacing="-0.02em" fill="#1B1713">1708</text>
+  
+  <!-- One line: A daily number puzzle. -->
+  <text x="114" y="370" font-family="'Inter', -apple-system, sans-serif" font-size="32" font-weight="500" letter-spacing="0.01em" fill="#1B1713">A daily number puzzle.</text>
+  
+  <!-- Small text: Developed by Asim Nawaz -->
+  <text x="114" y="460" font-family="'Inter', -apple-system, sans-serif" font-size="20" font-weight="400" letter-spacing="0.05em" fill="#6B6255">Developed by Asim Nawaz</text>
+  
+  <!-- Right decorative tile icon -->
+  <g transform="translate(820, 200)">
+    <rect width="200" height="200" rx="44" fill="#1B1713"/>
+    <text x="100" y="90" font-family="'Bodoni Moda', serif" font-size="64" font-weight="600" fill="#F5EFE4" text-anchor="middle">17</text>
+    <text x="100" y="160" font-family="'Bodoni Moda', serif" font-size="64" font-weight="600" fill="#F5EFE4" text-anchor="middle">08</text>
+  </g>
+</svg>

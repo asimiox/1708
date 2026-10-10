@@ -1,0 +1,6 @@
+{
+  "name": "1708",
+  "description": "A daily number puzzle. Reach 1708 using 5 tiles and 9 operation tokens. Developed by Asim Nawaz.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
