@@ -88,7 +88,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
             </div>
             <div className="w-[1px] h-8 bg-[var(--border)]" />
             <div>
-              <div className="text-lg font-serif font-semibold text-[var(--accent)]">{stats.dailyStreak}</div>
+              <div className="text-lg font-serif font-semibold text-[var(--ink)]">{stats.dailyStreak}</div>
               <div className="text-[11px] text-[var(--ink-secondary)] uppercase tracking-wider">Streak</div>
             </div>
             <div className="w-[1px] h-8 bg-[var(--border)]" />
@@ -113,8 +113,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition cursor-pointer ${
                   currentMode === 'daily'
-                    ? 'bg-[var(--accent)] text-white font-medium shadow-sm'
-                    : 'hover:bg-[var(--paper)] text-[var(--ink)]'
+                    ? 'bg-[var(--ink)] text-[var(--paper)] font-medium shadow-sm'
+                    : 'hover:bg-[var(--surface-alt)] text-[var(--ink)]'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -131,8 +131,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition cursor-pointer ${
                   currentMode === 'classic'
-                    ? 'bg-[var(--accent)] text-white font-medium shadow-sm'
-                    : 'hover:bg-[var(--paper)] text-[var(--ink)]'
+                    ? 'bg-[var(--ink)] text-[var(--paper)] font-medium shadow-sm'
+                    : 'hover:bg-[var(--surface-alt)] text-[var(--ink)]'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -149,8 +149,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition cursor-pointer ${
                   currentMode === 'founder'
-                    ? 'bg-[var(--accent)] text-white font-medium shadow-sm'
-                    : 'hover:bg-[var(--paper)] text-[var(--ink)]'
+                    ? 'bg-[var(--ink)] text-[var(--paper)] font-medium shadow-sm'
+                    : 'hover:bg-[var(--surface-alt)] text-[var(--ink)]'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -167,8 +167,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition cursor-pointer ${
                   currentMode === 'practice'
-                    ? 'bg-[var(--accent)] text-white font-medium shadow-sm'
-                    : 'hover:bg-[var(--paper)] text-[var(--ink)]'
+                    ? 'bg-[var(--ink)] text-[var(--paper)] font-medium shadow-sm'
+                    : 'hover:bg-[var(--surface-alt)] text-[var(--ink)]'
                 }`}
               >
                 <div className="flex items-center gap-2.5">

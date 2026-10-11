@@ -38,6 +38,7 @@ import { SelfTestModal } from './components/SelfTestModal';
 import { ConfirmNewPuzzleModal } from './components/ConfirmNewPuzzleModal';
 import { MenuDrawer } from './components/MenuDrawer';
 import { ThreeD1708 } from './components/ThreeD1708';
+import { CubeLogo1708 } from './components/CubeLogo1708';
 
 type Mode = 'daily' | 'classic' | 'founder' | 'practice';
 
@@ -430,15 +431,24 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] bg-[var(--paper)] text-[var(--ink)] flex flex-col justify-between selection:bg-[var(--ink)] selection:text-[var(--paper)] font-sans transition-colors duration-200">
       {/* 1. TOP HEADER NAVIGATION - EXACT REPRODUCTION OF REFERENCE IMAGE */}
-      <header className="w-full border-b border-[var(--border)] shrink-0 py-3.5 px-4 sm:px-8 bg-[var(--paper)] sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          {/* Left Brand Logo: 1708 serif */}
-          <div className="font-serif text-[28px] font-bold tracking-tight text-[var(--ink)] select-none">
-            1708
+      {/* 1. TOP HEADER NAVIGATION - FULLY ADAPTIVE ACROSS ANDROID / MOBILE / TABLET / DESKTOP */}
+      <header className="w-full border-b border-[var(--border)] shrink-0 py-2.5 sm:py-3.5 px-3 sm:px-8 bg-[var(--paper)] sticky top-0 z-40">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          {/* Left Brand Logo: 3D Cubes of 1708 */}
+          <div className="shrink-0 flex items-center">
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="flex items-center group transition hover:opacity-95 focus:outline-none cursor-pointer"
+              title="1708 - Number Puzzle"
+              aria-label="1708 3D Cubes Logo"
+            >
+              <CubeLogo1708 isWon={isWon} size="sm" className="hidden sm:inline-flex" />
+              <CubeLogo1708 isWon={isWon} size="xs" className="inline-flex sm:hidden" />
+            </button>
           </div>
 
-          {/* Center Navigation Tabs: Play, How to Play, About */}
-          <nav className="flex items-center gap-7 text-[14px]" aria-label="Main Navigation">
+          {/* Desktop & Tablet Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-6 text-[14px]" aria-label="Main Navigation">
             <button
               onClick={() => {}}
               className="inline-flex items-center gap-1.5 font-medium text-[var(--ink)] pb-1 border-b-2 border-[var(--ink)] cursor-pointer"
@@ -464,21 +474,42 @@ export default function App() {
             </button>
           </nav>
 
+          {/* Mobile / Android Navigation Tabs (Icon buttons that NEVER overlap) */}
+          <nav className="flex md:hidden items-center gap-1" aria-label="Mobile Navigation">
+            <button
+              onClick={() => setIsHowToPlayOpen(true)}
+              className="p-1.5 rounded-lg text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
+              title="How to Play"
+              aria-label="How to Play"
+            >
+              <BookOpen className="w-4 h-4 stroke-[1.75]" />
+            </button>
+
+            <button
+              onClick={() => setIsAboutOpen(true)}
+              className="p-1.5 rounded-lg text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
+              title="About"
+              aria-label="About"
+            >
+              <Info className="w-4 h-4 stroke-[1.75]" />
+            </button>
+          </nav>
+
           {/* Right Controls: Dark Mode Toggle Pill & Menu/Sliders */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Dark mode pill toggle with sun/moon */}
             <button
               onClick={toggleDarkMode}
-              className="w-12 h-6 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] flex items-center p-0.5 transition cursor-pointer relative"
+              className="w-11 sm:w-12 h-6 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] flex items-center p-0.5 transition cursor-pointer relative"
               title="Toggle theme"
               aria-label="Toggle theme"
             >
               <div
                 className={`w-5 h-5 rounded-full bg-[var(--paper-2)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)] shadow-xs transition-transform duration-200 ${
-                  darkMode ? 'translate-x-6' : 'translate-x-0'
+                  darkMode ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'
                 }`}
               >
-                {darkMode ? <Moon className="w-3 h-3 stroke-[2]" /> : <Sun className="w-3 h-3 stroke-[2] text-[#A06428]" />}
+                {darkMode ? <Moon className="w-3 h-3 stroke-[2]" /> : <Sun className="w-3 h-3 stroke-[2] text-[var(--ink)]" />}
               </div>
             </button>
 
@@ -496,24 +527,24 @@ export default function App() {
       </header>
 
       {/* MAIN GAMEPLAY CONTENT CONTAINER */}
-      <main className="w-full max-w-2xl mx-auto px-4 sm:px-8 py-5 flex-1 flex flex-col gap-6 text-left">
-        {/* 2. HERO SECTION: 1708 NUMBER PUZZLE + FLOATING 3D PORCELAIN TILES & ORBITS */}
-        <section className="w-full flex items-center justify-between gap-6 pt-2 pb-1">
-          <div className="flex flex-col text-left max-w-[280px] sm:max-w-[320px]">
-            <h1 className="font-serif text-[64px] sm:text-[76px] font-bold tracking-tight text-[var(--ink)] leading-none select-none">
+      <main className="w-full max-w-2xl mx-auto px-4 sm:px-8 py-4 sm:py-5 flex-1 flex flex-col gap-5 sm:gap-6 text-left">
+        {/* 2. HERO SECTION: 1708 NUMBER PUZZLE + FLOATING 3D MONOCHROME TILES & ORBITS */}
+        <section className="w-full flex items-center justify-between gap-3 sm:gap-6 pt-1 pb-1">
+          <div className="flex flex-col text-left min-w-0">
+            <h1 className="font-serif text-[48px] xs:text-[58px] sm:text-[76px] font-bold tracking-tight text-[var(--ink)] leading-none select-none">
               1708
             </h1>
-            <p className="text-[11px] font-sans font-medium uppercase tracking-[0.25em] text-[var(--ink-secondary)] mt-2.5">
+            <p className="text-[10px] sm:text-[11px] font-sans font-medium uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[var(--ink-secondary)] mt-2">
               NUMBER PUZZLE
             </p>
-            <div className="w-9 h-[1px] bg-[var(--border)] my-3" />
-            <p className="text-[13px] text-[var(--ink-secondary)] leading-relaxed">
+            <div className="w-8 sm:w-9 h-[1px] bg-[var(--border)] my-2 sm:my-3" />
+            <p className="text-[12px] sm:text-[13px] text-[var(--ink-secondary)] leading-relaxed max-w-[270px]">
               Reach the target number using the given tiles and operation tokens.
             </p>
           </div>
 
           <div className="shrink-0 flex items-center justify-end">
-            <ThreeD1708 isWon={isWon} className="w-[190px] sm:w-[270px] h-[130px] sm:h-[160px]" />
+            <ThreeD1708 isWon={isWon} className="w-[125px] xs:w-[160px] sm:w-[260px] h-[90px] xs:h-[110px] sm:h-[155px]" />
           </div>
         </section>
 
@@ -671,10 +702,10 @@ export default function App() {
 
           <button
             onClick={handleNewPuzzleRequest}
-            className="h-12 bg-[#23211E] text-white hover:bg-[#151412] active:bg-black rounded-[16px] font-medium text-[15px] flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+            className="h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 rounded-[16px] font-medium text-[15px] flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
             aria-label="New puzzle"
           >
-            <Play className="w-4 h-4 stroke-[1.75] fill-white text-white" />
+            <Play className="w-4 h-4 stroke-[1.75] fill-current" />
             <span>New Puzzle</span>
           </button>
         </div>
@@ -726,33 +757,15 @@ export default function App() {
         )}
       </main>
 
-      {/* 8. FOOTER - MATCHING REFERENCE IMAGE */}
-      <footer className="w-full border-t border-[var(--border)] py-4 px-4 sm:px-8 shrink-0 mt-6 bg-[var(--paper)]">
-        <div className="max-w-2xl mx-auto flex items-center justify-between text-[13px] text-[var(--ink-secondary)]">
-          <div className="flex items-center gap-3">
-            <span className="font-serif font-bold text-[var(--ink)] text-[16px]">1708</span>
-            <span className="opacity-40">|</span>
+      {/* 8. FOOTER - MINIMAL ATTRIBUTION, NO REDUNDANT BOTTOM CONTROLS */}
+      <footer className="w-full border-t border-[var(--border)] py-3.5 px-4 sm:px-8 shrink-0 mt-6 bg-[var(--paper)]">
+        <div className="max-w-2xl mx-auto flex items-center justify-between text-[12px] sm:text-[13px] text-[var(--ink-secondary)]">
+          <div className="flex items-center gap-2.5">
+            <span className="font-serif font-bold text-[var(--ink)] text-[15px]">1708</span>
+            <span className="opacity-35">·</span>
             <span>Developed by Asim Nawaz</span>
           </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleDarkMode}
-              className="hover:text-[var(--ink)] transition cursor-pointer"
-              title="Toggle theme"
-              aria-label="Toggle theme"
-            >
-              <Moon className="w-4 h-4 stroke-[1.75]" />
-            </button>
-            <button
-              onClick={() => setIsMenuDrawerOpen(true)}
-              className="hover:text-[var(--ink)] transition cursor-pointer"
-              title="Open options and game modes"
-              aria-label="Open options and game modes"
-            >
-              <Menu className="w-4 h-4 stroke-[1.75]" />
-            </button>
-          </div>
+          <span className="text-[11px] opacity-60 uppercase tracking-wider">Number Puzzle</span>
         </div>
       </footer>
 

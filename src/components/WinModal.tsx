@@ -59,7 +59,7 @@ export const WinModal: React.FC<WinModalProps> = ({
         {/* Founder route note */}
         {isClassicFounderRoute && (
           <div className="p-3 bg-[var(--paper)] border border-[var(--border)] rounded-[12px] text-left">
-            <span className="text-[13px] text-[var(--accent)] font-medium block">
+            <span className="text-[13px] text-[var(--ink)] font-semibold block">
               The founder route
             </span>
             <p className="text-[13px] text-[var(--ink)] opacity-65 mt-0.5 leading-relaxed">

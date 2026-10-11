@@ -61,7 +61,7 @@ export const SelfTestModal: React.FC<SelfTestModalProps> = ({ isOpen, onClose, r
                     <Check className="w-3.5 h-3.5 stroke-[1.5]" /> Pass
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-[13px] text-[var(--accent)] font-medium">
+                  <span className="flex items-center gap-1 text-[13px] text-[var(--ink)] font-bold">
                     <AlertCircle className="w-3.5 h-3.5 stroke-[1.5]" /> Fail
                   </span>
                 )}
@@ -82,7 +82,7 @@ export const SelfTestModal: React.FC<SelfTestModalProps> = ({ isOpen, onClose, r
           </button>
           <button
             onClick={onClose}
-            className="flex-1 h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 text-[15px] font-medium rounded-[12px] transition cursor-pointer"
+            className="flex-1 h-11 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 text-[15px] font-medium rounded-[12px] transition cursor-pointer"
           >
             Done
           </button>

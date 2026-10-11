@@ -1,45 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm Editorial Palette (#F7F3EA background, #25231F charcoal text, #B8562B terracotta) */
-  --paper: #F7F3EA;
-  --paper-2: #FFFDF9;
-  --surface: #FFFDF9;
-  --surface-alt: #EFE9DC;
+  /* Pure Monochrome Black + White (Light Mode) - No brown, no chocolate, no orange */
+  --paper: #FFFFFF;
+  --paper-2: #F7F7F8;
+  --surface: #FFFFFF;
+  --surface-alt: #EFEFEF;
 
-  /* Editorial Ink & Typography */
-  --ink: #25231F;
-  --ink-secondary: #706C66;
-  --ink-muted: #8E8A83;
-  --ink-dimmed: rgba(37, 35, 31, 0.28);
-  --border: rgba(37, 35, 31, 0.12);
-  --border-subtle: rgba(37, 35, 31, 0.07);
+  /* Crisp Neutral Ink & Typography */
+  --ink: #0A0A0A;
+  --ink-secondary: #666666;
+  --ink-muted: #999999;
+  --ink-dimmed: rgba(10, 10, 10, 0.25);
+  --border: #E5E5E5;
+  --border-subtle: #F0F0F0;
 
-  /* Spiced Terracotta Accent */
-  --accent: #B8562B;
-  --accent-light: rgba(184, 86, 43, 0.08);
-  --accent-subtle: rgba(184, 86, 43, 0.18);
-  --accent-hover: #A54B22;
+  /* Monochrome Accent (Pure Solid Black) */
+  --accent: #0A0A0A;
+  --accent-light: rgba(10, 10, 10, 0.06);
+  --accent-subtle: rgba(10, 10, 10, 0.12);
+  --accent-hover: #262626;
 }
 
 .dark {
-  /* Warm Charcoal Editorial Night Mode */
-  --paper: #161412;
-  --paper-2: #221E1A;
-  --surface: #221E1A;
-  --surface-alt: #1B1815;
+  /* Pure Dark Black + White (Dark Mode) - True Neutral Black, No chocolate, No coffee */
+  --paper: #0A0A0A;
+  --paper-2: #141414;
+  --surface: #141414;
+  --surface-alt: #202020;
 
-  --ink: #F4EFE6;
-  --ink-secondary: rgba(244, 239, 230, 0.68);
-  --ink-muted: rgba(244, 239, 230, 0.48);
-  --ink-dimmed: rgba(244, 239, 230, 0.25);
-  --border: rgba(244, 239, 230, 0.12);
-  --border-subtle: rgba(244, 239, 230, 0.07);
+  --ink: #FFFFFF;
+  --ink-secondary: #A3A3A3;
+  --ink-muted: #737373;
+  --ink-dimmed: rgba(255, 255, 255, 0.25);
+  --border: #262626;
+  --border-subtle: #1C1C1C;
 
-  --accent: #D26435;
-  --accent-light: rgba(210, 100, 53, 0.14);
-  --accent-subtle: rgba(210, 100, 53, 0.25);
-  --accent-hover: #E07343;
+  /* Monochrome Accent in Dark Mode (Pure Solid White) */
+  --accent: #FFFFFF;
+  --accent-light: rgba(255, 255, 255, 0.08);
+  --accent-subtle: rgba(255, 255, 255, 0.16);
+  --accent-hover: #E5E5E5;
 }
 
 @layer base {
@@ -59,12 +60,12 @@
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.18s ease, color 0.18s ease;
   }
 
   ::selection {
-    background-color: var(--accent);
-    color: var(--paper-2);
+    background-color: var(--ink);
+    color: var(--paper);
   }
 }
 

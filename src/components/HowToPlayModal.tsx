@@ -34,7 +34,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
         <div className="space-y-3.5 text-[13px] text-[var(--ink)] opacity-65 leading-relaxed">
           <div className="p-3 bg-[var(--paper)] rounded-[12px] border border-[var(--border)]">
             <p className="text-[var(--ink)] font-medium text-[15px]">
-              The target number is always exactly <span className="font-serif text-[17px] text-[var(--accent)] font-semibold">1708</span>.
+              The target number is always exactly <span className="font-serif text-[17px] text-[var(--ink)] font-bold">1708</span>.
             </p>
             <p className="mt-1 text-[13px] text-[var(--ink)] opacity-65">
               You start with 5 tiles and 9 operation tokens. Reach 1708 on any tile before tokens run out.
@@ -88,7 +88,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
           </div>
 
           <div className="p-3 rounded-[12px] bg-[var(--paper)] border border-[var(--border)] text-[13px]">
-            <span className="text-[var(--accent)] font-medium block">
+            <span className="text-[var(--ink)] font-semibold block">
               The founder route
             </span>
             <p className="text-[var(--ink)] opacity-65 mt-0.5">
@@ -99,7 +99,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
 
         <button
           onClick={onClose}
-          className="w-full h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 font-medium rounded-[12px] transition text-[15px] mt-1 cursor-pointer"
+          className="w-full h-11 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 font-medium rounded-[12px] transition text-[15px] mt-1 cursor-pointer"
         >
           Understood
         </button>
