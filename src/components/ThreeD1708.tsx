@@ -7,134 +7,183 @@ interface ThreeD1708Props {
 
 export const ThreeD1708: React.FC<ThreeD1708Props> = ({ isWon = false, className = '' }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [isIvoryTheme, setIsIvoryTheme] = useState(false);
 
-  // Minimalist, crystal-clear 3D isometric cubes
-  // Front face is kept upright so digits (1, 7, 0, 8) are 100% legible, sharp, and never distorted.
-  // 3D top and lateral faces provide clean physical depth and isometric volume.
-  const digits = ['1', '7', '0', '8'];
-
-  // Charcoal theme (matches the black New Puzzle button and dark 1708 wordmark)
-  const charcoalStyle = {
-    front: '#25231F',
-    top: '#3D3832',
-    right: '#181614',
-    digit: '#FFFFFF',
-    border: 'rgba(255, 255, 255, 0.12)',
-    shadow: '#181614',
-  };
-
-  // Ivory ceramic theme (clean warm paper tone)
-  const ivoryStyle = {
-    front: '#FFFFFF',
-    top: '#F7F4EE',
-    right: '#D8D1C2',
-    digit: '#25231F',
-    border: 'rgba(37, 35, 31, 0.14)',
-    shadow: '#25231F',
-  };
-
-  const currentTheme = isIvoryTheme ? ivoryStyle : charcoalStyle;
+  // 4 floating tactile porcelain tiles matching the exact reference image
+  // Arranged in an ascending, slightly rotated 3D perspective with orbital rings behind
+  const tilesData = [
+    {
+      digit: '1',
+      x: 36,
+      y: 92,
+      w: 48,
+      h: 60,
+      rotate: -3,
+      shadowOffset: 8,
+    },
+    {
+      digit: '7',
+      x: 92,
+      y: 68,
+      w: 52,
+      h: 64,
+      rotate: -7,
+      shadowOffset: 10,
+    },
+    {
+      digit: '0',
+      x: 154,
+      y: 44,
+      w: 54,
+      h: 66,
+      rotate: -11,
+      shadowOffset: 12,
+    },
+    {
+      digit: '8',
+      x: 218,
+      y: 20,
+      w: 56,
+      h: 68,
+      rotate: -15,
+      shadowOffset: 14,
+    },
+  ];
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center select-none cursor-pointer ${className}`}
-      aria-label="3D 1708 Isometric Cubes"
+      className={`relative inline-flex items-center justify-center select-none ${className}`}
+      aria-label="3D 1708 Porcelain Floating Tiles"
       role="img"
-      onClick={() => setIsIvoryTheme(!isIvoryTheme)}
-      title="Click to toggle minimal 3D style (Charcoal / Ivory)"
     >
       <svg
-        viewBox="0 0 148 76"
-        className="w-full h-full overflow-visible drop-shadow-[0_2px_6px_rgba(37,35,31,0.06)]"
+        viewBox="0 0 310 180"
+        className="w-full h-full overflow-visible"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <filter id="cube-ground-shadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" />
+          {/* Porcelain soft ambient drop shadow */}
+          <filter id="tile-ambient-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="6" />
+            <feOffset dx="4" dy="12" />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.16" />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
-          <linearGradient id="top-glaze" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+
+          {/* Deep contact shadow */}
+          <filter id="tile-contact-shadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4.5" />
+          </filter>
+
+          {/* Porcelain face gradient with subtle top-left ambient light */}
+          <linearGradient id="porcelain-face" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="40%" stopColor="#FAF7F2" />
+            <stop offset="100%" stopColor="#EDE6D8" />
+          </linearGradient>
+
+          {/* Beveled edge gradient */}
+          <linearGradient id="porcelain-edge" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F5EFE3" />
+            <stop offset="100%" stopColor="#D5CBB8" />
+          </linearGradient>
+
+          {/* Specular sheen */}
+          <linearGradient id="porcelain-sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </linearGradient>
         </defs>
 
-        {/* 1. Subtle ground contact shadows */}
-        <g opacity={isIvoryTheme ? '0.22' : '0.35'} filter="url(#cube-ground-shadow)">
-          {digits.map((_, i) => {
-            const x = 6 + i * 35;
-            return (
-              <ellipse
-                key={`shadow-${i}`}
-                cx={x + 16}
-                cy="58"
-                rx="14"
-                ry="4"
-                fill={currentTheme.shadow}
-              />
-            );
-          })}
+        {/* 1. Elegant Orbital Wireframe Rings behind the tiles (as in reference image) */}
+        <g opacity="0.55" fill="none" stroke="#D3CBBB" strokeWidth="1">
+          {/* Main sweeping orbital ellipse */}
+          <ellipse cx="160" cy="88" rx="140" ry="62" transform="rotate(-14 160 88)" />
+          {/* Secondary concentric orbital curve */}
+          <ellipse cx="165" cy="85" rx="115" ry="48" strokeDasharray="3 3" opacity="0.6" transform="rotate(-12 165 85)" />
         </g>
 
-        {/* 2. Four Minimalist 3D Cubes */}
-        {digits.map((digit, i) => {
-          const x = 6 + i * 35;
-          const yBase = 18;
+        {/* 2. Soft Contact Ground Shadows underneath tiles */}
+        <g opacity="0.3" filter="url(#tile-contact-shadow)">
+          {tilesData.map((t, idx) => (
+            <ellipse
+              key={`shadow-${idx}`}
+              cx={t.x + t.w / 2 + 6}
+              cy={t.y + t.h + 10}
+              rx={t.w * 0.55}
+              ry={t.h * 0.22}
+              fill="#25231F"
+              transform={`rotate(${t.rotate} ${t.x + t.w / 2} ${t.y + t.h / 2})`}
+            />
+          ))}
+        </g>
+
+        {/* 3. Four Floating 3D Porcelain Tiles */}
+        {tilesData.map((tile, i) => {
           const isHovered = hoveredIdx === i;
-          const yLift = isWon ? Math.sin((i + 1) * 1.5) * 3 : isHovered ? -3 : 0;
-          const y = yBase + yLift;
+          const yLift = isWon ? Math.sin((i + 1) * 1.5) * 6 : isHovered ? -5 : 0;
+          const cx = tile.x + tile.w / 2;
+          const cy = tile.y + tile.h / 2;
 
           return (
             <g
-              key={digit}
-              className="transition-transform duration-200"
+              key={tile.digit}
+              transform={`translate(0, ${yLift}) rotate(${tile.rotate} ${cx} ${cy})`}
+              className="transition-transform duration-200 cursor-pointer"
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
+              filter="url(#tile-ambient-shadow)"
             >
-              {/* TOP FACE: beveled isometric diamond */}
-              <polygon
-                points={`${x},${y} ${x + 28},${y} ${x + 34},${y - 6} ${x + 6},${y - 6}`}
-                fill={currentTheme.top}
-                stroke={currentTheme.border}
-                strokeWidth="0.75"
-                strokeLinejoin="round"
-              />
-              <polygon
-                points={`${x + 1},${y - 0.5} ${x + 27},${y - 0.5} ${x + 33},${y - 5.5} ${x + 7},${y - 5.5}`}
-                fill="url(#top-glaze)"
-              />
-
-              {/* RIGHT DEPTH FACE: side shadow creating 3D volume */}
-              <polygon
-                points={`${x + 28},${y} ${x + 34},${y - 6} ${x + 34},${y + 26} ${x + 28},${y + 32}`}
-                fill={currentTheme.right}
-                stroke={currentTheme.border}
-                strokeWidth="0.75"
-                strokeLinejoin="round"
-              />
-
-              {/* FRONT FACE: clean, upright plane with subtle rounded corners */}
+              {/* Tile 3D extruded back/side edge for physical thickness */}
               <rect
-                x={x}
-                y={y}
-                width="28"
-                height="32"
-                rx="3.5"
-                ry="3.5"
-                fill={currentTheme.front}
-                stroke={currentTheme.border}
-                strokeWidth="0.75"
+                x={tile.x + 2}
+                y={tile.y + 3}
+                width={tile.w}
+                height={tile.h}
+                rx="9"
+                ry="9"
+                fill="url(#porcelain-edge)"
+                stroke="#C7BDAB"
+                strokeWidth="0.8"
               />
 
-              {/* CRYSTAL-CLEAR DIGIT: bold, high-contrast, perfectly centered, zero skew */}
+              {/* Tile front face */}
+              <rect
+                x={tile.x}
+                y={tile.y}
+                width={tile.w}
+                height={tile.h}
+                rx="8"
+                ry="8"
+                fill="url(#porcelain-face)"
+                stroke="#DDD4C4"
+                strokeWidth="0.8"
+              />
+
+              {/* Subtle top bevel highlight */}
+              <rect
+                x={tile.x + 1}
+                y={tile.y + 1}
+                width={tile.w - 2}
+                height={tile.h * 0.45}
+                rx="7"
+                ry="7"
+                fill="url(#porcelain-sheen)"
+              />
+
+              {/* High-contrast, clean Bodoni serif digit */}
               <text
-                x={x + 14}
-                y={y + 17}
-                fill={currentTheme.digit}
-                fontSize="19"
-                fontWeight="700"
-                fontFamily="'Bodoni Moda', 'Playfair Display', Georgia, serif"
-                letterSpacing="-0.02em"
+                x={cx}
+                y={cy + 1}
+                fill="#25231F"
+                fontSize={tile.w * 0.58}
+                fontWeight="600"
+                fontFamily="'Bodoni Moda', 'Playfair Display', Didot, Georgia, serif"
+                letterSpacing="-0.03em"
                 textAnchor="middle"
                 dominantBaseline="central"
                 style={{
@@ -142,7 +191,7 @@ export const ThreeD1708: React.FC<ThreeD1708Props> = ({ isWon = false, className
                   WebkitFontSmoothing: 'antialiased',
                 }}
               >
-                {digit}
+                {tile.digit}
               </text>
             </g>
           );

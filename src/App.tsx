@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  Trophy,
-  HelpCircle,
-  RotateCcw,
-  Volume2,
-  VolumeX,
-  AlertCircle,
+  Home,
+  BookOpen,
+  Info,
+  Sun,
+  Moon,
+  SlidersHorizontal,
   Lightbulb,
-  ShieldCheck,
+  LayoutGrid,
+  RotateCcw,
+  Play,
+  Menu,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
 } from 'lucide-react';
 import { OpType, Tokens, Move } from './types/game';
 import { validateMove, TARGET, isFounderMove, hasLegalMove } from './utils/solver';
@@ -26,11 +30,13 @@ import { loadGameStats, recordWin, GameStats } from './utils/storage';
 import { runAllSelfTests, SelfTestReport } from './utils/tests';
 import { sounds } from './utils/audio';
 import { HowToPlayModal } from './components/HowToPlayModal';
+import { AboutModal } from './components/AboutModal';
 import { StatsModal } from './components/StatsModal';
 import { WinModal } from './components/WinModal';
 import { LossModal } from './components/LossModal';
 import { SelfTestModal } from './components/SelfTestModal';
 import { ConfirmNewPuzzleModal } from './components/ConfirmNewPuzzleModal';
+import { MenuDrawer } from './components/MenuDrawer';
 import { ThreeD1708 } from './components/ThreeD1708';
 
 type Mode = 'daily' | 'classic' | 'founder' | 'practice';
@@ -42,8 +48,32 @@ interface HistoryState {
 }
 
 export default function App() {
-  // Sound state
+  // Theme & Sound state
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(sounds.enabled);
+
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        document.documentElement.classList.toggle('dark', next);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prev => {
+      const next = !prev;
+      sounds.enabled = next;
+      return next;
+    });
+  }, []);
 
   // Active Mode (Menu order: 1. Daily, 2. Classic, 3. Founder, 4. Practice)
   const [mode, setMode] = useState<Mode>('daily');
@@ -70,8 +100,10 @@ export default function App() {
 
   // Modals state
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState<boolean>(false);
+  const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
   const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
   const [isSelfTestOpen, setIsSelfTestOpen] = useState<boolean>(false);
+  const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState<boolean>(false);
   const [isConfirmNewPuzzleOpen, setIsConfirmNewPuzzleOpen] = useState<boolean>(false);
   const [stats, setStats] = useState<GameStats>(loadGameStats());
   const [testReport, setTestReport] = useState<SelfTestReport>(() => runAllSelfTests());
@@ -79,7 +111,7 @@ export default function App() {
   const dailyNumber = useMemo(() => getDailyNumber(new Date()), []);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Trigger feedback toast with vibration
+  // Trigger feedback toast
   const showToast = useCallback((msg: string) => {
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
@@ -87,7 +119,7 @@ export default function App() {
     setToastMessage(msg);
     toastTimeoutRef.current = setTimeout(() => {
       setToastMessage(null);
-    }, 2200);
+    }, 2400);
   }, []);
 
   // Check win or loss conditions
@@ -120,183 +152,125 @@ export default function App() {
     setToastMessage(null);
   }, []);
 
-  // Keyboard navigation: Escape clears selection
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        clearSelection();
+  // Initialize a puzzle by mode
+  const initPuzzle = useCallback(
+    (m: Mode) => {
+      let p: GeneratedPuzzle;
+      if (m === 'daily') {
+        p = generateDailyPuzzle(new Date());
+      } else if (m === 'founder') {
+        p = generateFounderPuzzle();
+      } else if (m === 'classic') {
+        p = generateClassicPuzzle();
+      } else {
+        p = generatePracticePuzzle();
       }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [clearSelection]);
 
-  // Load a puzzle for the selected mode
-  const loadModePuzzle = useCallback(
-    (newMode: Mode) => {
+      setCurrentPuzzle(p);
+      setTiles(p.tiles);
+      setTokens(p.tokens);
       setSelectedOp(null);
       setSelectedTileIndices([]);
-      setToastMessage(null);
-      setNewTileIndex(null);
+      setHistory([]);
       setIsWon(false);
       setIsLost(false);
       setIsResultDismissed(false);
       setWinningMove(null);
+      setNewTileIndex(null);
+      setToastMessage(null);
       setShowHint(false);
-      setHistory([]);
-      setHistoryExpanded(false);
-
-      let puzzle: GeneratedPuzzle;
-      if (newMode === 'daily') {
-        puzzle = generateDailyPuzzle(new Date());
-      } else if (newMode === 'classic') {
-        puzzle = generateClassicPuzzle();
-      } else if (newMode === 'founder') {
-        puzzle = generateFounderPuzzle();
-      } else {
-        puzzle = generatePracticePuzzle();
-      }
-
-      setCurrentPuzzle(puzzle);
-      setTiles([...puzzle.tiles]);
-      setTokens({ ...puzzle.tokens });
-
-      const state = checkGameState(puzzle.tiles, puzzle.tokens, newMode);
-      if (state.won) {
-        setIsWon(true);
-      } else if (state.lost) {
-        setIsLost(true);
-      }
     },
-    [checkGameState]
+    []
   );
 
-  // Initialize on mount or mode change
+  // Re-generate or initialize on mode change
   useEffect(() => {
-    loadModePuzzle(mode);
-  }, [mode, loadModePuzzle]);
+    initPuzzle(mode);
+  }, [mode, initPuzzle]);
 
-  const toggleSound = () => {
-    const val = sounds.toggle();
-    setSoundEnabled(val);
-  };
-
-  // Generate a new verified puzzle
-  const startNewPuzzle = useCallback(() => {
-    setIsConfirmNewPuzzleOpen(false);
-
-    let newPuzzle: GeneratedPuzzle;
-    if (mode === 'daily') {
-      // In daily mode, start a new practice puzzle so player can continue playing
-      newPuzzle = generatePracticePuzzle();
-    } else if (mode === 'classic') {
-      newPuzzle = generateClassicPuzzle(undefined, currentPuzzle?.tokens);
-    } else if (mode === 'founder') {
-      newPuzzle = generateFounderPuzzle(undefined, currentPuzzle?.tokens);
-    } else {
-      newPuzzle = generatePracticePuzzle(
-        currentPuzzle ? { tiles: currentPuzzle.tiles, tokens: currentPuzzle.tokens } : undefined
-      );
-    }
-
-    setCurrentPuzzle(newPuzzle);
-    setTiles([...newPuzzle.tiles]);
-    setTokens({ ...newPuzzle.tokens });
-    setHistory([]);
-    setHistoryExpanded(false);
+  // Restart puzzle
+  const handleRestart = useCallback(() => {
+    if (!currentPuzzle) return;
+    sounds.tap();
+    setTiles(currentPuzzle.tiles);
+    setTokens(currentPuzzle.tokens);
     setSelectedOp(null);
     setSelectedTileIndices([]);
-    setToastMessage(null);
-    setNewTileIndex(null);
+    setHistory([]);
     setIsWon(false);
     setIsLost(false);
     setIsResultDismissed(false);
     setWinningMove(null);
-    setShowHint(false);
-  }, [mode, currentPuzzle]);
+    setNewTileIndex(null);
+    setToastMessage(null);
+  }, [currentPuzzle]);
 
-  // Request new puzzle with mid-game progress confirmation guard
   const handleNewPuzzleRequest = useCallback(() => {
-    if (mode === 'daily') {
-      setMode('practice');
-      return;
-    }
-
     if (history.length > 0 && !isWon && !isLost) {
       setIsConfirmNewPuzzleOpen(true);
-      return;
+    } else {
+      initPuzzle(mode);
     }
+  }, [history.length, isWon, isLost, initPuzzle, mode]);
 
-    startNewPuzzle();
-  }, [mode, history.length, isWon, isLost, startNewPuzzle]);
+  const startNewPuzzle = useCallback(() => {
+    setIsConfirmNewPuzzleOpen(false);
+    initPuzzle(mode);
+  }, [initPuzzle, mode]);
 
-  // Execute Move
+  // Execute a valid move
   const executeMove = useCallback(
-    (op: OpType, inputVals: number[], indicesToRemove: number[]) => {
-      const blockFounder = mode === 'founder';
-      const validation = validateMove(op, inputVals, blockFounder);
-
-      if (!validation.valid || validation.result === undefined) {
+    (op: OpType, inputs: number[], inputIndices: number[]) => {
+      const validation = validateMove(op, inputs, mode === 'founder');
+      if (!validation.valid) {
         showToast(validation.reason || 'Invalid move');
         sounds.error();
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
-            navigator.vibrate(40);
+            navigator.vibrate(50);
           } catch {
             // ignore
           }
         }
-        setSelectedTileIndices([]);
-        setSelectedOp(null);
         return;
       }
 
-      const result = validation.result;
-      const move: Move = { op, inputs: inputVals, result };
+      const res = validation.result!;
+      const move: Move = { op, inputs, result: res };
 
-      setHistory(prev => [
-        ...prev,
-        {
-          tiles: [...tiles],
-          tokens: { ...tokens },
-          move,
-        },
-      ]);
+      // Save state before move
+      setHistory(prev => [...prev, { tiles: [...tiles], tokens: { ...tokens }, move }]);
 
-      const nextTokens: Tokens = {
-        ...tokens,
-        [op]: tokens[op] - 1,
-      };
+      // Calculate next tokens
+      const nextTokens = { ...tokens, [op]: tokens[op] - 1 };
+
+      // Calculate next tiles
+      const remainingTiles = tiles.filter((_, idx) => !inputIndices.includes(idx));
+      const nextTiles = [...remainingTiles, res];
+      const insertedIndex = nextTiles.length - 1;
+
       setTokens(nextTokens);
-
-      const nextTiles = tiles.filter((_, idx) => !indicesToRemove.includes(idx));
-      nextTiles.push(result);
       setTiles(nextTiles);
-
-      const newIdx = nextTiles.length - 1;
-      setNewTileIndex(newIdx);
-      setTimeout(() => setNewTileIndex(null), 900);
-
       setSelectedOp(null);
       setSelectedTileIndices([]);
-      setToastMessage(null);
+      setNewTileIndex(insertedIndex);
+      setTimeout(() => setNewTileIndex(null), 800);
 
-      const state = checkGameState(nextTiles, nextTokens, mode);
-      if (state.won) {
+      const stateCheck = checkGameState(nextTiles, nextTokens, mode);
+      if (stateCheck.won) {
         sounds.win();
         setIsWon(true);
+        setIsLost(false);
         setIsResultDismissed(false);
         setWinningMove(move);
-        setIsLost(false);
-
-        const todayUtc = new Date().toISOString().slice(0, 10);
-        const updated = recordWin(mode, history.length + 1, todayUtc);
+        const updated = recordWin(mode, history.length + 1, new Date().toISOString().split('T')[0]);
         setStats(updated);
-      } else if (state.lost) {
+      } else if (stateCheck.lost) {
         sounds.error();
-        setIsWon(false);
         setIsLost(true);
+        setIsWon(false);
         setIsResultDismissed(false);
+        showToast(stateCheck.message || 'No legal moves left.');
       } else {
         sounds.combine();
         setIsWon(false);
@@ -321,13 +295,6 @@ export default function App() {
     if (!availability.available) {
       showToast(availability.reason || 'Tile cannot be used right now');
       sounds.error();
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        try {
-          navigator.vibrate(40);
-        } catch {
-          // ignore
-        }
-      }
       return;
     }
 
@@ -370,13 +337,6 @@ export default function App() {
     if (!availability.available) {
       showToast(availability.reason || 'Token cannot be used right now');
       sounds.error();
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        try {
-          navigator.vibrate(40);
-        } catch {
-          // ignore
-        }
-      }
       return;
     }
 
@@ -402,80 +362,47 @@ export default function App() {
     setSelectedOp(op);
   };
 
-  // Replay / Restart current puzzle
-  const handleRestart = () => {
-    if (!currentPuzzle) return;
-    sounds.tap();
-    setTiles([...currentPuzzle.tiles]);
-    setTokens({ ...currentPuzzle.tokens });
-    setHistory([]);
-    setHistoryExpanded(false);
-    setSelectedOp(null);
-    setSelectedTileIndices([]);
-    setToastMessage(null);
-    setNewTileIndex(null);
-    setIsResultDismissed(false);
-
-    const state = checkGameState(currentPuzzle.tiles, currentPuzzle.tokens, mode);
-    if (state.won) {
-      setIsWon(true);
-      setIsLost(false);
-    } else if (state.lost) {
-      setIsWon(false);
-      setIsLost(true);
-    } else {
-      setIsWon(false);
-      setIsLost(false);
-      setWinningMove(null);
-    }
-  };
-
-  const totalTokensLeft = (Object.values(tokens) as number[]).reduce((sum, n) => sum + n, 0);
+  const totalTokensLeft = useMemo(() => {
+    return (Object.values(tokens) as number[]).reduce((sum, n) => sum + n, 0);
+  }, [tokens]);
 
   const isClassicFounderRoute = useMemo(() => {
-    if (!winningMove) return false;
-    return isFounderMove(winningMove);
-  }, [winningMove]);
+    if (!isWon || mode !== 'classic') return false;
+    return history.some(h => isFounderMove(h.move));
+  }, [isWon, mode, history]);
 
-  // Live preview equation
+  // Preview next action
   const previewInfo = useMemo(() => {
-    if ((selectedOp === 'SQ' || selectedOp === 'POW') && selectedTileIndices.length === 1) {
+    if (!selectedOp && selectedTileIndices.length === 0) return null;
+
+    if (selectedOp === 'SQ' && selectedTileIndices.length === 1) {
       const val = tiles[selectedTileIndices[0]];
-      const v = validateMove(selectedOp, [val], mode === 'founder');
-      if (v.valid && v.result !== undefined) {
-        const expr = selectedOp === 'SQ' ? `${val}²` : `${val}^${val}`;
-        return `${expr} = ${v.result}`;
-      }
+      return `${val}² = ${val * val}`;
+    }
+    if (selectedOp === 'POW' && selectedTileIndices.length === 1) {
+      const val = tiles[selectedTileIndices[0]];
+      return `${val}^${val} = ${Math.pow(val, val)}`;
     }
     if (selectedOp && selectedTileIndices.length === 2) {
-      const valA = tiles[selectedTileIndices[0]];
-      const valB = tiles[selectedTileIndices[1]];
-      const v = validateMove(selectedOp, [valA, valB], mode === 'founder');
-      if (v.valid && v.result !== undefined) {
-        const sym = selectedOp === 'ADD' ? '+' : selectedOp === 'SUB' ? '−' : '×';
-        return `${valA} ${sym} ${valB} = ${v.result}`;
-      }
+      const a = tiles[selectedTileIndices[0]];
+      const b = tiles[selectedTileIndices[1]];
+      if (selectedOp === 'ADD') return `${a} + ${b} = ${a + b}`;
+      if (selectedOp === 'SUB') return `|${a} - ${b}| = ${Math.abs(a - b)}`;
+      if (selectedOp === 'MUL') return `${a} × ${b} = ${a * b}`;
     }
     return null;
-  }, [selectedOp, selectedTileIndices, tiles, mode]);
+  }, [selectedOp, selectedTileIndices, tiles]);
 
-  // Live hint bar text
+  // Live status or instruction string
   const hintText = useMemo(() => {
-    if (toastMessage) {
-      return toastMessage;
-    }
-    if (previewInfo) {
-      return previewInfo;
-    }
-    if (isWon && isResultDismissed) {
-      return `Solved in ${history.length} moves. Tap to view summary.`;
-    }
-    if (isLost && isResultDismissed) {
-      return 'No legal moves left. Tap to view summary.';
-    }
+    if (toastMessage) return toastMessage;
+    if (isWon) return 'Puzzle solved! 1708 reached.';
+    if (isLost) return 'No legal moves left. Restart to try again.';
+    if (previewInfo) return previewInfo;
+
     if (!selectedOp) {
       if (selectedTileIndices.length === 0) {
-        return 'Choose a tile or a token.';
+        return 'Choose a tile or a token to start';
       }
       if (selectedTileIndices.length === 1) {
         return 'Pick a token or 1 more tile.';
@@ -497,166 +424,150 @@ export default function App() {
         }
       }
     }
-    return 'Choose a tile or a token.';
-  }, [toastMessage, previewInfo, isWon, isLost, isResultDismissed, history.length, selectedOp, selectedTileIndices]);
+    return 'Choose a tile or a token to start';
+  }, [toastMessage, previewInfo, isWon, isLost, selectedOp, selectedTileIndices]);
 
   return (
-    <div className="min-h-[100dvh] max-w-[420px] mx-auto bg-[var(--paper)] text-[var(--ink)] flex flex-col justify-between p-4 selection:bg-[var(--accent)] selection:text-[var(--paper-2)]">
-      {/* 1. Header: Bodoni Moda 1708 wordmark, 44px, tight letter spacing */}
-      <header className="w-full flex flex-col gap-3 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col text-left">
-            <h1 className="text-[44px] font-serif font-semibold tracking-[-0.02em] text-[var(--ink)] leading-none select-none">
-              1708<span className="sr-only"> Game</span>
+    <div className="min-h-[100dvh] bg-[var(--paper)] text-[var(--ink)] flex flex-col justify-between selection:bg-[var(--ink)] selection:text-[var(--paper)] font-sans transition-colors duration-200">
+      {/* 1. TOP HEADER NAVIGATION - EXACT REPRODUCTION OF REFERENCE IMAGE */}
+      <header className="w-full border-b border-[var(--border)] shrink-0 py-3.5 px-4 sm:px-8 bg-[var(--paper)] sticky top-0 z-40">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          {/* Left Brand Logo: 1708 serif */}
+          <div className="font-serif text-[28px] font-bold tracking-tight text-[var(--ink)] select-none">
+            1708
+          </div>
+
+          {/* Center Navigation Tabs: Play, How to Play, About */}
+          <nav className="flex items-center gap-7 text-[14px]" aria-label="Main Navigation">
+            <button
+              onClick={() => {}}
+              className="inline-flex items-center gap-1.5 font-medium text-[var(--ink)] pb-1 border-b-2 border-[var(--ink)] cursor-pointer"
+            >
+              <Home className="w-4 h-4 stroke-[1.75]" />
+              <span>Play</span>
+            </button>
+
+            <button
+              onClick={() => setIsHowToPlayOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[var(--ink-secondary)] hover:text-[var(--ink)] transition pb-1 border-b-2 border-transparent cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4 stroke-[1.75]" />
+              <span>How to Play</span>
+            </button>
+
+            <button
+              onClick={() => setIsAboutOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[var(--ink-secondary)] hover:text-[var(--ink)] transition pb-1 border-b-2 border-transparent cursor-pointer"
+            >
+              <Info className="w-4 h-4 stroke-[1.75]" />
+              <span>About</span>
+            </button>
+          </nav>
+
+          {/* Right Controls: Dark Mode Toggle Pill & Menu/Sliders */}
+          <div className="flex items-center gap-3">
+            {/* Dark mode pill toggle with sun/moon */}
+            <button
+              onClick={toggleDarkMode}
+              className="w-12 h-6 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] flex items-center p-0.5 transition cursor-pointer relative"
+              title="Toggle theme"
+              aria-label="Toggle theme"
+            >
+              <div
+                className={`w-5 h-5 rounded-full bg-[var(--paper-2)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)] shadow-xs transition-transform duration-200 ${
+                  darkMode ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              >
+                {darkMode ? <Moon className="w-3 h-3 stroke-[2]" /> : <Sun className="w-3 h-3 stroke-[2] text-[#A06428]" />}
+              </div>
+            </button>
+
+            {/* Sliders / Options drawer button */}
+            <button
+              onClick={() => setIsMenuDrawerOpen(true)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
+              title="Game options and modes"
+              aria-label="Game options and modes"
+            >
+              <SlidersHorizontal className="w-4 h-4 stroke-[1.75]" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN GAMEPLAY CONTENT CONTAINER */}
+      <main className="w-full max-w-2xl mx-auto px-4 sm:px-8 py-5 flex-1 flex flex-col gap-6 text-left">
+        {/* 2. HERO SECTION: 1708 NUMBER PUZZLE + FLOATING 3D PORCELAIN TILES & ORBITS */}
+        <section className="w-full flex items-center justify-between gap-6 pt-2 pb-1">
+          <div className="flex flex-col text-left max-w-[280px] sm:max-w-[320px]">
+            <h1 className="font-serif text-[64px] sm:text-[76px] font-bold tracking-tight text-[var(--ink)] leading-none select-none">
+              1708
             </h1>
-            <p className="text-[13px] text-[var(--ink)] opacity-65 mt-1">
-              Developed by Asim Nawaz
+            <p className="text-[11px] font-sans font-medium uppercase tracking-[0.25em] text-[var(--ink-secondary)] mt-2.5">
+              NUMBER PUZZLE
+            </p>
+            <div className="w-9 h-[1px] bg-[var(--border)] my-3" />
+            <p className="text-[13px] text-[var(--ink-secondary)] leading-relaxed">
+              Reach the target number using the given tiles and operation tokens.
             </p>
           </div>
 
-          {/* Header Actions: 1.5px stroke, 20px icons, no emoji, real button elements */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsSelfTestOpen(true)}
-              className="w-9 h-9 rounded-[12px] border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] flex items-center justify-center text-[var(--ink)] opacity-65 hover:opacity-100 transition cursor-pointer"
-              title="Verification tests"
-              aria-label="Verification tests"
-            >
-              <ShieldCheck className="w-5 h-5 stroke-[1.5]" />
-            </button>
-            <button
-              onClick={() => setIsStatsOpen(true)}
-              className="w-9 h-9 rounded-[12px] border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] flex items-center justify-center text-[var(--ink)] opacity-65 hover:opacity-100 transition cursor-pointer"
-              title="Statistics"
-              aria-label="Statistics"
-            >
-              <Trophy className="w-5 h-5 stroke-[1.5]" />
-            </button>
-            <button
-              onClick={toggleSound}
-              className="w-9 h-9 rounded-[12px] border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] flex items-center justify-center text-[var(--ink)] opacity-65 hover:opacity-100 transition cursor-pointer"
-              title={soundEnabled ? 'Mute sound' : 'Enable sound'}
-              aria-label="Toggle sound"
-            >
-              {soundEnabled ? <Volume2 className="w-5 h-5 stroke-[1.5]" /> : <VolumeX className="w-5 h-5 stroke-[1.5]" />}
-            </button>
-            <button
-              onClick={() => setIsHowToPlayOpen(true)}
-              className="w-9 h-9 rounded-[12px] border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] flex items-center justify-center text-[var(--ink)] opacity-65 hover:opacity-100 transition cursor-pointer"
-              title="How to play"
-              aria-label="How to play"
-            >
-              <HelpCircle className="w-5 h-5 stroke-[1.5]" />
-            </button>
+          <div className="shrink-0 flex items-center justify-end">
+            <ThreeD1708 isWon={isWon} className="w-[190px] sm:w-[270px] h-[130px] sm:h-[160px]" />
           </div>
-        </div>
+        </section>
 
-        {/* Mode switch: plain text tabs with a 2px ink underline on the active one */}
-        <nav className="flex items-center justify-between border-b border-[var(--border)] text-[15px]" aria-label="Game modes">
-          {(['daily', 'classic', 'founder', 'practice'] as Mode[]).map((m) => {
-            const isCurrent = mode === m;
-            const label =
-              m === 'daily'
-                ? `Daily #${dailyNumber}`
-                : m === 'classic'
-                ? 'Classic'
-                : m === 'founder'
-                ? 'Founder'
-                : 'Practice';
-            return (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`pb-2 transition cursor-pointer text-center flex-1 ${
-                  isCurrent
-                    ? 'border-b-2 border-[var(--ink)] font-semibold text-[var(--ink)]'
-                    : 'text-[var(--ink)] opacity-65 hover:opacity-100'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </nav>
-      </header>
-
-      {/* Main Gameplay */}
-      <main className="w-full flex-1 flex flex-col justify-between py-3 gap-3 min-h-0 text-left">
-        {/* 2. Target Card with 3D 1708 element on the right */}
-        <div className="rounded-[14px] bg-[var(--paper-2)] text-[var(--ink)] p-4 border border-[var(--border)] shadow-[0_1px_3px_rgba(37,35,31,0.04)] flex items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-col justify-between min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--ink-secondary)]">
+        {/* 3. TARGET NUMBER CARD */}
+        <div className="w-full rounded-[22px] bg-[var(--paper-2)] border border-[var(--border)] p-6 sm:p-7 shadow-[0_1px_4px_rgba(37,35,31,0.03)] flex flex-col gap-5 text-left">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col">
+              <span className="text-[13px] text-[var(--ink-secondary)] font-normal">
                 Target number
               </span>
-              {mode === 'founder' && (
-                <span className="text-[11px] font-medium text-[var(--accent)] bg-[var(--accent-light)] px-1.5 py-0.5 rounded-[6px]">
-                  7 × 244 blocked
-                </span>
-              )}
+              <div className="font-serif text-[46px] sm:text-[52px] font-bold text-[var(--ink)] leading-tight tracking-tight my-0.5 tabular-nums select-none">
+                1708
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[var(--border)] text-[12px] text-[var(--ink-secondary)] w-fit mt-1">
+                <span className="tabular-nums">{history.length} {history.length === 1 ? 'move' : 'moves'}</span>
+                <span>·</span>
+                <span className="tabular-nums">{totalTokensLeft} tokens left</span>
+              </div>
             </div>
 
-            <div className="text-[38px] font-serif font-semibold tracking-[-0.02em] text-[var(--ink)] leading-tight py-0.5 tabular-nums select-none">
-              1708
-            </div>
-
-            <div className="flex items-center gap-2 text-[12px] text-[var(--ink-secondary)]">
-              <span className="tabular-nums font-medium">{history.length} {history.length === 1 ? 'move' : 'moves'}</span>
-              <span>·</span>
-              <span className="tabular-nums font-medium">{totalTokensLeft} left</span>
+            <div className="flex flex-col items-end gap-2.5">
+              <button
+                onClick={() => setShowHint(!showHint)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--border)] hover:bg-[var(--surface-alt)] text-[13px] text-[var(--ink)] font-normal transition cursor-pointer"
+                title="Optimal moves hint"
+              >
+                <Lightbulb className="w-3.5 h-3.5 stroke-[1.75]" />
+                <span>{showHint && currentPuzzle ? `Best: ${currentPuzzle.solveResult.minMoves}` : 'Optimal'}</span>
+              </button>
+              <span className="text-[12px] text-[var(--ink-secondary)]">
+                {tiles.length} tiles · {totalTokensLeft} tokens
+              </span>
             </div>
           </div>
 
-          {/* Right side: Minimal 3D "1708" interactive isometric blocks */}
-          <div className="shrink-0 flex items-center justify-center pl-2">
-            <ThreeD1708 isWon={isWon} className="w-[144px] h-[78px]" />
+          {/* Target Card instruction & status area */}
+          <div className="border-t border-[var(--border)]/70 pt-3.5 flex flex-col items-center justify-center text-center">
+            <LayoutGrid className="w-5 h-5 text-[var(--ink-secondary)] opacity-60 mb-1 stroke-[1.5]" />
+            <p className="text-[13px] text-[var(--ink-secondary)]">
+              {hintText}
+            </p>
           </div>
         </div>
 
-        {/* 3. Live Hint Bar and Preview */}
-        <div
-          role="status"
-          aria-live="polite"
-          onClick={() => {
-            if ((isWon || isLost) && isResultDismissed) {
-              setIsResultDismissed(false);
-            }
-          }}
-          className={`w-full py-2 px-3.5 rounded-[12px] text-[13px] font-medium flex items-center justify-between transition-colors min-h-[40px] shrink-0 border ${
-            toastMessage
-              ? 'bg-[var(--ink)] text-[var(--paper)] border-[var(--ink)] animate-shake'
-              : (isWon || isLost) && isResultDismissed
-              ? 'bg-[var(--paper-2)] text-[var(--accent)] border-[var(--border)] cursor-pointer'
-              : 'bg-[var(--paper-2)] text-[var(--ink)] opacity-85 border-[var(--border)]'
-          }`}
-        >
-          <div className="flex items-center gap-2 truncate">
-            {toastMessage && <AlertCircle className="w-4 h-4 shrink-0 text-[var(--paper)] stroke-[1.5]" />}
-            <span className="truncate">{hintText}</span>
+        {/* 4. TILES: 5 tiles with large serif digits */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-1 text-[14px]">
+            <span className="font-medium text-[var(--ink)]">
+              Tiles <span className="text-[var(--ink-secondary)] font-normal">({tiles.length})</span>
+            </span>
+            <span className="text-[13px] text-[var(--ink-secondary)]">Reach 1708</span>
           </div>
 
-          {(selectedOp !== null || selectedTileIndices.length > 0) && !toastMessage && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                clearSelection();
-              }}
-              className="text-[13px] font-medium text-[var(--ink)] opacity-75 hover:opacity-100 px-2.5 py-0.5 rounded-[12px] border border-[var(--border)] hover:bg-[var(--paper)] transition shrink-0 ml-2 cursor-pointer"
-              title="Clear selection"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* 4. TILES: 5 tiles, rounded 12px, tabular-nums */}
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <div className="flex items-center justify-between px-1 text-[13px] text-[var(--ink-secondary)]">
-            <span>Tiles ({tiles.length})</span>
-            <span className="text-[13px]">Reach 1708</span>
-          </div>
-
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-3">
             {tiles.map((val, idx) => {
               const isSelected = selectedTileIndices.includes(idx);
               const isNew = newTileIndex === idx;
@@ -675,34 +586,38 @@ export default function App() {
                 <button
                   key={`${idx}-${val}`}
                   onClick={() => handleTileClick(idx)}
-                  className={`relative min-h-[56px] h-14 rounded-[12px] font-semibold text-[18px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
+                  className={`relative min-h-[76px] sm:min-h-[88px] rounded-[18px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
                     isTarget
                       ? 'bg-[var(--ink)] text-[var(--paper-2)] border-2 border-[var(--ink)] shadow-xs'
                       : isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-1 ring-[var(--ink)] shadow-xs scale-[1.02]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-2 ring-[var(--ink)] shadow-xs scale-[1.02]'
                       : isNew
                       ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)]/50'
                       : isAvailable
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 active:scale-[0.98]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--paper)] active:scale-[0.98]'
                       : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
                   }`}
                   aria-label={`Tile ${val}`}
                 >
-                  <span className="truncate px-0.5 max-w-full leading-tight tabular-nums">{val}</span>
+                  <span className="font-serif text-[28px] sm:text-[34px] font-medium leading-none tabular-nums truncate px-1">
+                    {val}
+                  </span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* 5. TOKENS: 9 operation tokens */}
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <div className="flex items-center justify-between px-1 text-[13px] text-[var(--ink-secondary)]">
-            <span>Tokens ({totalTokensLeft} left)</span>
-            <span className="text-[13px]">1 per move</span>
+        {/* 5. TOKENS: 5 operation tokens */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-1 text-[14px]">
+            <span className="font-medium text-[var(--ink)]">
+              Tokens <span className="text-[var(--ink-secondary)] font-normal">({totalTokensLeft} left)</span>
+            </span>
+            <span className="text-[13px] text-[var(--ink-secondary)]">1 per move</span>
           </div>
 
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-3">
             {(['ADD', 'SUB', 'MUL', 'SQ', 'POW'] as OpType[]).map(op => {
               const count = tokens[op];
               const isSelected = selectedOp === op;
@@ -719,22 +634,22 @@ export default function App() {
                 <button
                   key={op}
                   onClick={() => handleOpClick(op)}
-                  className={`min-h-[52px] h-[54px] rounded-[12px] flex flex-col items-center justify-center transition-all duration-150 p-1 border cursor-pointer shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
+                  className={`min-h-[86px] sm:min-h-[98px] rounded-[18px] flex flex-col items-center justify-center transition-all duration-150 p-2 border cursor-pointer shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
                     isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-1 ring-[var(--ink)] shadow-xs scale-[1.02]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-2 ring-[var(--ink)] shadow-xs scale-[1.02]'
                       : isAvailable
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--surface-alt)]/30 active:scale-[0.98]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--paper)] active:scale-[0.98]'
                       : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
                   }`}
                   aria-label={`${op} token (${count} remaining)`}
                 >
-                  <div className="text-[14px] font-semibold leading-none tabular-nums">
-                    {op === 'ADD' ? '+' : op === 'SUB' ? '−' : op === 'MUL' ? '×' : op === 'SQ' ? 'x²' : 'xˣ'}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[var(--ink-secondary)] leading-tight mt-0.5 font-medium">
+                  <div className="text-[11px] font-sans font-medium tracking-wider text-[var(--ink-secondary)] uppercase">
                     {op}
                   </div>
-                  <div className="mt-0.5 text-[11px] tabular-nums text-[var(--ink-secondary)] font-medium">
+                  <div className="text-[17px] sm:text-[19px] font-medium leading-tight my-1 text-[var(--ink)]">
+                    {op === 'ADD' ? '+' : op === 'SUB' ? '−' : op === 'MUL' ? '×' : op === 'SQ' ? 'x²' : 'xⁿ'}
+                  </div>
+                  <div className="text-[12px] tabular-nums text-[var(--ink-secondary)] font-medium">
                     ×{count}
                   </div>
                 </button>
@@ -743,32 +658,33 @@ export default function App() {
           </div>
         </div>
 
-        {/* 6. Action Row: NO UNDO BUTTON IN ANY TYPE. Only Restart and New Puzzle */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* 6. ACTION ROW: RESTART & SOLID BLACK NEW PUZZLE */}
+        <div className="grid grid-cols-2 gap-3 pt-1">
           <button
             onClick={handleRestart}
-            className="flex-1 min-h-[44px] h-11 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] rounded-[12px] font-medium text-[15px] text-[var(--ink)] flex items-center justify-center gap-1.5 transition cursor-pointer"
+            className="h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] rounded-[16px] font-medium text-[15px] text-[var(--ink)] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
             aria-label="Restart puzzle"
           >
-            <RotateCcw className="w-4 h-4 stroke-[1.5]" />
-            Restart
+            <RotateCcw className="w-4 h-4 stroke-[1.75]" />
+            <span>Restart</span>
           </button>
 
           <button
             onClick={handleNewPuzzleRequest}
-            className="flex-1 min-h-[44px] h-11 bg-[var(--ink)] text-[var(--paper)] hover:bg-[var(--ink)]/90 active:bg-[var(--ink)]/80 rounded-[12px] font-medium text-[15px] flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+            className="h-12 bg-[#23211E] text-white hover:bg-[#151412] active:bg-black rounded-[16px] font-medium text-[15px] flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
             aria-label="New puzzle"
           >
-            New Puzzle
+            <Play className="w-4 h-4 stroke-[1.75] fill-white text-white" />
+            <span>New Puzzle</span>
           </button>
         </div>
 
-        {/* 7. Collapsible Move History */}
+        {/* 7. Collapsible Move History (when moves exist) */}
         {history.length > 0 && (
-          <div className="bg-[var(--paper-2)] rounded-[12px] border border-[var(--border)] overflow-hidden shrink-0">
+          <div className="bg-[var(--paper-2)] rounded-[16px] border border-[var(--border)] overflow-hidden shrink-0 mt-1">
             <button
               onClick={() => setHistoryExpanded(!historyExpanded)}
-              className="w-full px-3.5 py-2.5 text-[13px] flex items-center justify-between text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer"
+              className="w-full px-4 py-2.5 text-[13px] flex items-center justify-between text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer"
             >
               <span className="truncate">
                 Step {history.length}: [{history[history.length - 1].move.op}]{' '}
@@ -778,18 +694,18 @@ export default function App() {
                   ? `${history[history.length - 1].move.inputs[0]}^${history[history.length - 1].move.inputs[0]} = ${history[history.length - 1].move.result}`
                   : `${history[history.length - 1].move.inputs[0]} & ${history[history.length - 1].move.inputs[1]} → ${history[history.length - 1].move.result}`}
               </span>
-              <span className="flex items-center gap-1 text-[13px] text-[var(--ink)] opacity-65 shrink-0 ml-2">
+              <span className="flex items-center gap-1 text-[13px] text-[var(--ink-secondary)] shrink-0 ml-2">
                 {history.length} {history.length === 1 ? 'move' : 'moves'}
                 {historyExpanded ? <ChevronUp className="w-4 h-4 stroke-[1.5]" /> : <ChevronDown className="w-4 h-4 stroke-[1.5]" />}
               </span>
             </button>
 
             {historyExpanded && (
-              <div className="px-3.5 pb-2.5 pt-1.5 border-t border-[var(--border)] max-h-24 overflow-y-auto space-y-1">
+              <div className="px-4 pb-3 pt-1.5 border-t border-[var(--border)] max-h-28 overflow-y-auto space-y-1">
                 {history.map((h, i) => (
                   <div
                     key={i}
-                    className="flex justify-between items-center text-[var(--ink)] opacity-65 text-[13px] tabular-nums"
+                    className="flex justify-between items-center text-[var(--ink-secondary)] text-[13px] tabular-nums"
                   >
                     <span>
                       {i + 1}. [{h.move.op}]{' '}
@@ -810,12 +726,43 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer Credit on every main screen */}
-      <footer className="w-full text-center text-[13px] text-[var(--ink)] opacity-65 py-2 shrink-0">
-        Developed by Asim Nawaz
+      {/* 8. FOOTER - MATCHING REFERENCE IMAGE */}
+      <footer className="w-full border-t border-[var(--border)] py-4 px-4 sm:px-8 shrink-0 mt-6 bg-[var(--paper)]">
+        <div className="max-w-2xl mx-auto flex items-center justify-between text-[13px] text-[var(--ink-secondary)]">
+          <div className="flex items-center gap-3">
+            <span className="font-serif font-bold text-[var(--ink)] text-[16px]">1708</span>
+            <span className="opacity-40">|</span>
+            <span>Developed by Asim Nawaz</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleDarkMode}
+              className="hover:text-[var(--ink)] transition cursor-pointer"
+              title="Toggle theme"
+              aria-label="Toggle theme"
+            >
+              <Moon className="w-4 h-4 stroke-[1.75]" />
+            </button>
+            <button
+              onClick={() => setIsMenuDrawerOpen(true)}
+              className="hover:text-[var(--ink)] transition cursor-pointer"
+              title="Open options and game modes"
+              aria-label="Open options and game modes"
+            >
+              <Menu className="w-4 h-4 stroke-[1.75]" />
+            </button>
+          </div>
+        </div>
       </footer>
 
-      {/* Modals */}
+      {/* MODALS & DRAWERS */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+        onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
+      />
+
       <HowToPlayModal
         isOpen={isHowToPlayOpen}
         onClose={() => setIsHowToPlayOpen(false)}
@@ -834,7 +781,35 @@ export default function App() {
         onRerun={() => setTestReport(runAllSelfTests())}
       />
 
-      {/* Solved Screen: WinModal with [x] close, only New Puzzle & Replay */}
+      <MenuDrawer
+        isOpen={isMenuDrawerOpen}
+        onClose={() => setIsMenuDrawerOpen(false)}
+        onOpenHowToPlay={() => {
+          setIsMenuDrawerOpen(false);
+          setIsHowToPlayOpen(true);
+        }}
+        onOpenStats={() => {
+          setIsMenuDrawerOpen(false);
+          setIsStatsOpen(true);
+        }}
+        onOpenSelfTest={() => {
+          setIsMenuDrawerOpen(false);
+          setIsSelfTestOpen(true);
+        }}
+        soundEnabled={soundEnabled}
+        onToggleSound={toggleSound}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
+        currentMode={mode}
+        onSelectMode={(m) => {
+          setMode(m);
+          setIsMenuDrawerOpen(false);
+        }}
+        dailyNumber={dailyNumber}
+        stats={stats}
+      />
+
+      {/* WinModal */}
       <WinModal
         isOpen={isWon && !isResultDismissed}
         onClose={() => setIsResultDismissed(true)}
@@ -846,7 +821,7 @@ export default function App() {
         onNewPuzzle={startNewPuzzle}
       />
 
-      {/* Failed Screen: LossModal with [x] close, only New Puzzle & Replay */}
+      {/* LossModal */}
       <LossModal
         isOpen={isLost && !isResultDismissed}
         onClose={() => setIsResultDismissed(true)}
@@ -856,6 +831,7 @@ export default function App() {
         onNewPuzzle={startNewPuzzle}
       />
 
+      {/* ConfirmNewPuzzleModal */}
       <ConfirmNewPuzzleModal
         isOpen={isConfirmNewPuzzleOpen}
         onConfirm={startNewPuzzle}
