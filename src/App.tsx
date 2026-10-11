@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  Undo2,
 } from 'lucide-react';
 import { OpType, Tokens, Move } from './types/game';
 import { validateMove, TARGET, isFounderMove, hasLegalMove } from './utils/solver';
@@ -37,7 +38,6 @@ import { LossModal } from './components/LossModal';
 import { SelfTestModal } from './components/SelfTestModal';
 import { ConfirmNewPuzzleModal } from './components/ConfirmNewPuzzleModal';
 import { MenuDrawer } from './components/MenuDrawer';
-import { ThreeD1708 } from './components/ThreeD1708';
 import { CubeLogo1708 } from './components/CubeLogo1708';
 
 type Mode = 'daily' | 'classic' | 'founder' | 'practice';
@@ -49,23 +49,33 @@ interface HistoryState {
 }
 
 export default function App() {
-  // Theme & Sound state
+  // Theme & Sound state (Default: DARK THEME)
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
+      const saved = localStorage.getItem('theme');
+      if (saved !== null) {
+        return saved === 'dark';
+      }
+      return true; // Dark mode default as requested
     }
-    return false;
+    return true;
   });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(sounds.enabled);
 
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode(prev => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        document.documentElement.classList.toggle('dark', next);
+  // Sync dark class to html document and storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
       }
-      return next;
-    });
+      localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev);
   }, []);
 
   const toggleSound = useCallback(() => {
@@ -205,6 +215,22 @@ export default function App() {
     setNewTileIndex(null);
     setToastMessage(null);
   }, [currentPuzzle]);
+
+  // Undo last move
+  const handleUndo = useCallback(() => {
+    if (history.length === 0 || isWon) return;
+    sounds.tap();
+    const lastState = history[history.length - 1];
+    setTiles(lastState.tiles);
+    setTokens(lastState.tokens);
+    setHistory(prev => prev.slice(0, -1));
+    setSelectedOp(null);
+    setSelectedTileIndices([]);
+    setIsLost(false);
+    setIsWon(false);
+    setIsResultDismissed(false);
+    setToastMessage(null);
+  }, [history, isWon]);
 
   const handleNewPuzzleRequest = useCallback(() => {
     if (history.length > 0 && !isWon && !isLost) {
@@ -429,53 +455,24 @@ export default function App() {
   }, [toastMessage, previewInfo, isWon, isLost, selectedOp, selectedTileIndices]);
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--paper)] text-[var(--ink)] flex flex-col justify-between selection:bg-[var(--ink)] selection:text-[var(--paper)] font-sans transition-colors duration-200">
-      {/* 1. TOP HEADER NAVIGATION - EXACT REPRODUCTION OF REFERENCE IMAGE */}
-      {/* 1. TOP HEADER NAVIGATION - FULLY ADAPTIVE ACROSS ANDROID / MOBILE / TABLET / DESKTOP */}
-      <header className="w-full border-b border-[var(--border)] shrink-0 py-2.5 sm:py-3.5 px-3 sm:px-8 bg-[var(--paper)] sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
-          {/* Left Brand Logo: 3D Cubes of 1708 */}
+    <div className="h-[100dvh] max-h-[100dvh] w-full bg-[var(--paper)] text-[var(--ink)] flex flex-col justify-between selection:bg-[var(--ink)] selection:text-[var(--paper)] font-sans overflow-hidden select-none transition-colors duration-200">
+      {/* 1. TOP HEADER: SINGLE 3D CUBES LOGO, THEME TOGGLE & SETTINGS */}
+      <header className="w-full border-b border-[var(--border)] shrink-0 h-12 sm:h-13 px-3 sm:px-6 bg-[var(--paper)] flex items-center">
+        <div className="max-w-xl mx-auto w-full flex items-center justify-between gap-3">
+          {/* Brand Logo: ONLY ONE 3D Cubes Logo at the top */}
           <div className="shrink-0 flex items-center">
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center group transition hover:opacity-95 focus:outline-none cursor-pointer"
+              onClick={() => {}}
+              className="flex items-center group transition hover:opacity-90 focus:outline-none cursor-pointer"
               title="1708 - Number Puzzle"
               aria-label="1708 3D Cubes Logo"
             >
-              <CubeLogo1708 isWon={isWon} size="sm" className="hidden sm:inline-flex" />
-              <CubeLogo1708 isWon={isWon} size="xs" className="inline-flex sm:hidden" />
+              <CubeLogo1708 isWon={isWon} size="sm" />
             </button>
           </div>
 
-          {/* Desktop & Tablet Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-6 text-[14px]" aria-label="Main Navigation">
-            <button
-              onClick={() => {}}
-              className="inline-flex items-center gap-1.5 font-medium text-[var(--ink)] pb-1 border-b-2 border-[var(--ink)] cursor-pointer"
-            >
-              <Home className="w-4 h-4 stroke-[1.75]" />
-              <span>Play</span>
-            </button>
-
-            <button
-              onClick={() => setIsHowToPlayOpen(true)}
-              className="inline-flex items-center gap-1.5 text-[var(--ink-secondary)] hover:text-[var(--ink)] transition pb-1 border-b-2 border-transparent cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4 stroke-[1.75]" />
-              <span>How to Play</span>
-            </button>
-
-            <button
-              onClick={() => setIsAboutOpen(true)}
-              className="inline-flex items-center gap-1.5 text-[var(--ink-secondary)] hover:text-[var(--ink)] transition pb-1 border-b-2 border-transparent cursor-pointer"
-            >
-              <Info className="w-4 h-4 stroke-[1.75]" />
-              <span>About</span>
-            </button>
-          </nav>
-
-          {/* Mobile / Android Navigation Tabs (Icon buttons that NEVER overlap) */}
-          <nav className="flex md:hidden items-center gap-1" aria-label="Mobile Navigation">
+          {/* Right Controls: How to Play, Theme Toggle, Options Drawer */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => setIsHowToPlayOpen(true)}
               className="p-1.5 rounded-lg text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
@@ -485,31 +482,19 @@ export default function App() {
               <BookOpen className="w-4 h-4 stroke-[1.75]" />
             </button>
 
-            <button
-              onClick={() => setIsAboutOpen(true)}
-              className="p-1.5 rounded-lg text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
-              title="About"
-              aria-label="About"
-            >
-              <Info className="w-4 h-4 stroke-[1.75]" />
-            </button>
-          </nav>
-
-          {/* Right Controls: Dark Mode Toggle Pill & Menu/Sliders */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Dark mode pill toggle with sun/moon */}
+            {/* Dark/Light mode toggle switch */}
             <button
               onClick={toggleDarkMode}
-              className="w-11 sm:w-12 h-6 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] flex items-center p-0.5 transition cursor-pointer relative"
+              className="w-11 h-6 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] flex items-center p-0.5 transition cursor-pointer relative"
               title="Toggle theme"
               aria-label="Toggle theme"
             >
               <div
-                className={`w-5 h-5 rounded-full bg-[var(--paper-2)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)] shadow-xs transition-transform duration-200 ${
-                  darkMode ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-[var(--paper-2)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)] shadow-2xs transition-transform duration-200 ${
+                  darkMode ? 'translate-x-5' : 'translate-x-0'
                 }`}
               >
-                {darkMode ? <Moon className="w-3 h-3 stroke-[2]" /> : <Sun className="w-3 h-3 stroke-[2] text-[var(--ink)]" />}
+                {darkMode ? <Moon className="w-3 h-3 stroke-[2]" /> : <Sun className="w-3 h-3 stroke-[2]" />}
               </div>
             </button>
 
@@ -517,8 +502,8 @@ export default function App() {
             <button
               onClick={() => setIsMenuDrawerOpen(true)}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
-              title="Game options and modes"
-              aria-label="Game options and modes"
+              title="Options & Modes"
+              aria-label="Options & Modes"
             >
               <SlidersHorizontal className="w-4 h-4 stroke-[1.75]" />
             </button>
@@ -526,79 +511,78 @@ export default function App() {
         </div>
       </header>
 
-      {/* MAIN GAMEPLAY CONTENT CONTAINER */}
-      <main className="w-full max-w-2xl mx-auto px-4 sm:px-8 py-4 sm:py-5 flex-1 flex flex-col gap-5 sm:gap-6 text-left">
-        {/* 2. HERO SECTION: 1708 NUMBER PUZZLE + FLOATING 3D MONOCHROME TILES & ORBITS */}
-        <section className="w-full flex items-center justify-between gap-3 sm:gap-6 pt-1 pb-1">
-          <div className="flex flex-col text-left min-w-0">
-            <h1 className="font-serif text-[48px] xs:text-[58px] sm:text-[76px] font-bold tracking-tight text-[var(--ink)] leading-none select-none">
-              1708
-            </h1>
-            <p className="text-[10px] sm:text-[11px] font-sans font-medium uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[var(--ink-secondary)] mt-2">
-              NUMBER PUZZLE
-            </p>
-            <div className="w-8 sm:w-9 h-[1px] bg-[var(--border)] my-2 sm:my-3" />
-            <p className="text-[12px] sm:text-[13px] text-[var(--ink-secondary)] leading-relaxed max-w-[270px]">
-              Reach the target number using the given tiles and operation tokens.
-            </p>
-          </div>
+      {/* 2. MODE SELECTOR SUB-BAR (DAILY, CLASSIC, FOUNDER, PRACTICE) */}
+      <div className="w-full max-w-xl mx-auto px-3 sm:px-6 pt-2 shrink-0">
+        <div className="flex items-center justify-between bg-[var(--paper-2)] border border-[var(--border)] p-1 rounded-xl">
+          {(['daily', 'classic', 'founder', 'practice'] as Mode[]).map(m => {
+            const isActive = mode === m;
+            return (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`flex-1 py-1 px-1.5 rounded-lg text-[12px] font-medium transition cursor-pointer capitalize text-center ${
+                  isActive
+                    ? 'bg-[var(--ink)] text-[var(--paper)] shadow-2xs'
+                    : 'text-[var(--ink-secondary)] hover:text-[var(--ink)]'
+                }`}
+              >
+                {m === 'daily' ? `Daily #${dailyNumber}` : m}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          <div className="shrink-0 flex items-center justify-end">
-            <ThreeD1708 isWon={isWon} className="w-[125px] xs:w-[160px] sm:w-[260px] h-[90px] xs:h-[110px] sm:h-[155px]" />
-          </div>
-        </section>
-
-        {/* 3. TARGET NUMBER CARD */}
-        <div className="w-full rounded-[22px] bg-[var(--paper-2)] border border-[var(--border)] p-6 sm:p-7 shadow-[0_1px_4px_rgba(37,35,31,0.03)] flex flex-col gap-5 text-left">
-          <div className="flex items-start justify-between">
-            <div className="flex flex-col">
-              <span className="text-[13px] text-[var(--ink-secondary)] font-normal">
-                Target number
+      {/* 3. STATIC APP PLAYFIELD: FITS TO VIEWPORT WITHOUT SCROLLING */}
+      <main className="w-full max-w-xl mx-auto px-3 sm:px-6 py-2 flex-1 flex flex-col justify-between min-h-0 text-left">
+        {/* Target Card */}
+        <div className="w-full rounded-[18px] bg-[var(--paper-2)] border border-[var(--border)] p-3 sm:p-4 shrink-0 flex flex-col gap-1.5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-[11px] font-sans font-medium uppercase tracking-[0.16em] text-[var(--ink-secondary)] select-none">
+                Target
               </span>
-              <div className="font-serif text-[46px] sm:text-[52px] font-bold text-[var(--ink)] leading-tight tracking-tight my-0.5 tabular-nums select-none">
+              <span className="font-serif text-[32px] sm:text-[40px] font-bold text-[var(--ink)] leading-none tabular-nums select-none">
                 1708
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[var(--border)] text-[12px] text-[var(--ink-secondary)] w-fit mt-1">
-                <span className="tabular-nums">{history.length} {history.length === 1 ? 'move' : 'moves'}</span>
-                <span>·</span>
-                <span className="tabular-nums">{totalTokensLeft} tokens left</span>
-              </div>
+              </span>
             </div>
 
-            <div className="flex flex-col items-end gap-2.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowHint(!showHint)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--border)] hover:bg-[var(--surface-alt)] text-[13px] text-[var(--ink)] font-normal transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--border)] hover:bg-[var(--surface-alt)] text-[12px] text-[var(--ink)] font-normal transition cursor-pointer"
                 title="Optimal moves hint"
               >
                 <Lightbulb className="w-3.5 h-3.5 stroke-[1.75]" />
                 <span>{showHint && currentPuzzle ? `Best: ${currentPuzzle.solveResult.minMoves}` : 'Optimal'}</span>
               </button>
-              <span className="text-[12px] text-[var(--ink-secondary)]">
-                {tiles.length} tiles · {totalTokensLeft} tokens
+
+              <span className="text-[12px] text-[var(--ink-secondary)] tabular-nums border border-[var(--border)] px-2.5 py-1 rounded-full">
+                {history.length} {history.length === 1 ? 'move' : 'moves'}
               </span>
             </div>
           </div>
 
-          {/* Target Card instruction & status area */}
-          <div className="border-t border-[var(--border)]/70 pt-3.5 flex flex-col items-center justify-center text-center">
-            <LayoutGrid className="w-5 h-5 text-[var(--ink-secondary)] opacity-60 mb-1 stroke-[1.5]" />
-            <p className="text-[13px] text-[var(--ink-secondary)]">
+          <div className="border-t border-[var(--border)]/70 pt-1.5 flex items-center justify-between text-[12px]">
+            <span className="truncate pr-2 font-medium text-[var(--ink)]">
               {hintText}
-            </p>
+            </span>
+            <span className="shrink-0 text-[11px] text-[var(--ink-secondary)] tabular-nums">
+              {totalTokensLeft} tokens left
+            </span>
           </div>
         </div>
 
-        {/* 4. TILES: 5 tiles with large serif digits */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between px-1 text-[14px]">
+        {/* Tiles: 5 tiles */}
+        <div className="flex flex-col gap-1 shrink-0">
+          <div className="flex items-center justify-between px-0.5 text-[12px]">
             <span className="font-medium text-[var(--ink)]">
               Tiles <span className="text-[var(--ink-secondary)] font-normal">({tiles.length})</span>
             </span>
-            <span className="text-[13px] text-[var(--ink-secondary)]">Reach 1708</span>
+            <span className="text-[11px] text-[var(--ink-secondary)]">Reach 1708</span>
           </div>
 
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
             {tiles.map((val, idx) => {
               const isSelected = selectedTileIndices.includes(idx);
               const isNew = newTileIndex === idx;
@@ -617,20 +601,20 @@ export default function App() {
                 <button
                   key={`${idx}-${val}`}
                   onClick={() => handleTileClick(idx)}
-                  className={`relative min-h-[76px] sm:min-h-[88px] rounded-[18px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
+                  className={`relative h-14 sm:h-17 md:h-19 rounded-[14px] sm:rounded-[16px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border shadow-2xs ${
                     isTarget
-                      ? 'bg-[var(--ink)] text-[var(--paper-2)] border-2 border-[var(--ink)] shadow-xs'
+                      ? 'bg-[var(--ink)] text-[var(--paper)] border-2 border-[var(--ink)] shadow-xs'
                       : isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-2 ring-[var(--ink)] shadow-xs scale-[1.02]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-2 ring-[var(--ink)] scale-[1.03]'
                       : isNew
                       ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)]/50'
                       : isAvailable
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--paper)] active:scale-[0.98]'
-                      : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)] active:scale-[0.98]'
+                      : 'opacity-25 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
                   }`}
                   aria-label={`Tile ${val}`}
                 >
-                  <span className="font-serif text-[28px] sm:text-[34px] font-medium leading-none tabular-nums truncate px-1">
+                  <span className="font-serif text-[22px] sm:text-[28px] md:text-[32px] font-semibold leading-none tabular-nums truncate px-1">
                     {val}
                   </span>
                 </button>
@@ -639,16 +623,16 @@ export default function App() {
           </div>
         </div>
 
-        {/* 5. TOKENS: 5 operation tokens */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between px-1 text-[14px]">
+        {/* Tokens: 5 operations */}
+        <div className="flex flex-col gap-1 shrink-0">
+          <div className="flex items-center justify-between px-0.5 text-[12px]">
             <span className="font-medium text-[var(--ink)]">
               Tokens <span className="text-[var(--ink-secondary)] font-normal">({totalTokensLeft} left)</span>
             </span>
-            <span className="text-[13px] text-[var(--ink-secondary)]">1 per move</span>
+            <span className="text-[11px] text-[var(--ink-secondary)]">1 per move</span>
           </div>
 
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
             {(['ADD', 'SUB', 'MUL', 'SQ', 'POW'] as OpType[]).map(op => {
               const count = tokens[op];
               const isSelected = selectedOp === op;
@@ -665,22 +649,22 @@ export default function App() {
                 <button
                   key={op}
                   onClick={() => handleOpClick(op)}
-                  className={`min-h-[86px] sm:min-h-[98px] rounded-[18px] flex flex-col items-center justify-center transition-all duration-150 p-2 border cursor-pointer shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
+                  className={`h-15 sm:h-18 md:h-20 rounded-[14px] sm:rounded-[16px] flex flex-col items-center justify-between transition-all duration-150 p-1.5 sm:p-2 border cursor-pointer shadow-2xs ${
                     isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-2 ring-[var(--ink)] shadow-xs scale-[1.02]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-2 ring-[var(--ink)] scale-[1.03]'
                       : isAvailable
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--paper)] active:scale-[0.98]'
-                      : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)] active:scale-[0.98]'
+                      : 'opacity-25 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
                   }`}
                   aria-label={`${op} token (${count} remaining)`}
                 >
-                  <div className="text-[11px] font-sans font-medium tracking-wider text-[var(--ink-secondary)] uppercase">
+                  <div className="text-[9px] sm:text-[10px] font-sans font-medium tracking-wider text-[var(--ink-secondary)] uppercase">
                     {op}
                   </div>
-                  <div className="text-[17px] sm:text-[19px] font-medium leading-tight my-1 text-[var(--ink)]">
+                  <div className="text-[16px] sm:text-[19px] font-bold leading-none text-[var(--ink)]">
                     {op === 'ADD' ? '+' : op === 'SUB' ? '−' : op === 'MUL' ? '×' : op === 'SQ' ? 'x²' : 'xⁿ'}
                   </div>
-                  <div className="text-[12px] tabular-nums text-[var(--ink-secondary)] font-medium">
+                  <div className="text-[11px] tabular-nums text-[var(--ink-secondary)] font-medium">
                     ×{count}
                   </div>
                 </button>
@@ -689,20 +673,33 @@ export default function App() {
           </div>
         </div>
 
-        {/* 6. ACTION ROW: RESTART & SOLID BLACK NEW PUZZLE */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <button
-            onClick={handleRestart}
-            className="h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] rounded-[16px] font-medium text-[15px] text-[var(--ink)] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
-            aria-label="Restart puzzle"
-          >
-            <RotateCcw className="w-4 h-4 stroke-[1.75]" />
-            <span>Restart</span>
-          </button>
+        {/* Action Row: Restart, Undo, New Puzzle */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0 pt-0.5">
+          <div className="flex gap-1.5">
+            <button
+              onClick={handleRestart}
+              className="flex-1 h-11 sm:h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--surface-alt)] rounded-[14px] sm:rounded-[16px] font-medium text-[14px] text-[var(--ink)] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              aria-label="Restart puzzle"
+            >
+              <RotateCcw className="w-4 h-4 stroke-[1.75]" />
+              <span>Restart</span>
+            </button>
+            {history.length > 0 && (
+              <button
+                onClick={handleUndo}
+                className="px-3 h-11 sm:h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--surface-alt)] rounded-[14px] sm:rounded-[16px] font-medium text-[13px] text-[var(--ink)] flex items-center justify-center gap-1 transition cursor-pointer"
+                title="Undo last move"
+                aria-label="Undo move"
+              >
+                <Undo2 className="w-3.5 h-3.5 stroke-[1.75]" />
+                <span className="hidden xs:inline">Undo</span>
+              </button>
+            )}
+          </div>
 
           <button
             onClick={handleNewPuzzleRequest}
-            className="h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 rounded-[16px] font-medium text-[15px] flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+            className="h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 rounded-[14px] sm:rounded-[16px] font-medium text-[14px] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
             aria-label="New puzzle"
           >
             <Play className="w-4 h-4 stroke-[1.75] fill-current" />
@@ -710,64 +707,11 @@ export default function App() {
           </button>
         </div>
 
-        {/* 7. Collapsible Move History (when moves exist) */}
-        {history.length > 0 && (
-          <div className="bg-[var(--paper-2)] rounded-[16px] border border-[var(--border)] overflow-hidden shrink-0 mt-1">
-            <button
-              onClick={() => setHistoryExpanded(!historyExpanded)}
-              className="w-full px-4 py-2.5 text-[13px] flex items-center justify-between text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer"
-            >
-              <span className="truncate">
-                Step {history.length}: [{history[history.length - 1].move.op}]{' '}
-                {history[history.length - 1].move.op === 'SQ'
-                  ? `${history[history.length - 1].move.inputs[0]}² = ${history[history.length - 1].move.result}`
-                  : history[history.length - 1].move.op === 'POW'
-                  ? `${history[history.length - 1].move.inputs[0]}^${history[history.length - 1].move.inputs[0]} = ${history[history.length - 1].move.result}`
-                  : `${history[history.length - 1].move.inputs[0]} & ${history[history.length - 1].move.inputs[1]} → ${history[history.length - 1].move.result}`}
-              </span>
-              <span className="flex items-center gap-1 text-[13px] text-[var(--ink-secondary)] shrink-0 ml-2">
-                {history.length} {history.length === 1 ? 'move' : 'moves'}
-                {historyExpanded ? <ChevronUp className="w-4 h-4 stroke-[1.5]" /> : <ChevronDown className="w-4 h-4 stroke-[1.5]" />}
-              </span>
-            </button>
-
-            {historyExpanded && (
-              <div className="px-4 pb-3 pt-1.5 border-t border-[var(--border)] max-h-28 overflow-y-auto space-y-1">
-                {history.map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center text-[var(--ink-secondary)] text-[13px] tabular-nums"
-                  >
-                    <span>
-                      {i + 1}. [{h.move.op}]{' '}
-                      {h.move.op === 'SQ'
-                        ? `${h.move.inputs[0]}²`
-                        : h.move.op === 'POW'
-                        ? `${h.move.inputs[0]}^${h.move.inputs[0]}`
-                        : `${h.move.inputs[0]} & ${h.move.inputs[1]}`}
-                    </span>
-                    <span className="font-medium text-[var(--ink)]">
-                      = {h.move.result}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* 8. FOOTER - MINIMAL ATTRIBUTION, NO REDUNDANT BOTTOM CONTROLS */}
-      <footer className="w-full border-t border-[var(--border)] py-3.5 px-4 sm:px-8 shrink-0 mt-6 bg-[var(--paper)]">
-        <div className="max-w-2xl mx-auto flex items-center justify-between text-[12px] sm:text-[13px] text-[var(--ink-secondary)]">
-          <div className="flex items-center gap-2.5">
-            <span className="font-serif font-bold text-[var(--ink)] text-[15px]">1708</span>
-            <span className="opacity-35">·</span>
-            <span>Developed by Asim Nawaz</span>
-          </div>
-          <span className="text-[11px] opacity-60 uppercase tracking-wider">Number Puzzle</span>
+        {/* Clean Static Attribution (Zero-scroll, No bottom navigation bar) */}
+        <div className="text-[11px] text-[var(--ink-secondary)] opacity-60 text-center py-0.5 shrink-0 select-none">
+          1708 · Developed by Asim Nawaz
         </div>
-      </footer>
+      </main>
 
       {/* MODALS & DRAWERS */}
       <AboutModal
