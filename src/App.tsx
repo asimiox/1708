@@ -779,7 +779,7 @@ export default function App() {
         stats={stats}
       />
 
-      {/* WinModal with real Level progression */}
+      {/* WinModal with real Level progression, Play Again, and Share image snapshot */}
       <WinModal
         isOpen={isWon && !isResultDismissed}
         onClose={() => setIsResultDismissed(true)}
@@ -790,8 +790,10 @@ export default function App() {
         onPlayAgain={handleRestart}
         onNewPuzzle={startNewPuzzle}
         currentLevel={mode === 'level' ? Math.max(1, stats.currentLevel - 1) : stats.currentLevel}
+        nextLevel={mode === 'level' ? stats.currentLevel : stats.currentLevel + 1}
         isLevelMode={mode === 'level'}
         onNextLevel={handleNextLevel}
+        mode={mode}
       />
 
       {/* LossModal */}

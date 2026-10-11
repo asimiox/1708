@@ -1,6 +1,7 @@
-import React from 'react';
-import { RotateCcw, X, ArrowRight, Trophy } from 'lucide-react';
+import React, { useState } from 'react';
+import { RotateCcw, X, ArrowRight, Share2, Sparkles, Check, Download } from 'lucide-react';
 import { Move } from '../types/game';
+import { shareVictory, createVictorySnapshot } from '../utils/snapshot';
 
 interface WinModalProps {
   isOpen: boolean;
@@ -12,8 +13,10 @@ interface WinModalProps {
   onPlayAgain: () => void;
   onNewPuzzle?: () => void;
   currentLevel?: number;
+  nextLevel?: number;
   isLevelMode?: boolean;
   onNextLevel?: () => void;
+  mode?: string;
 }
 
 export const WinModal: React.FC<WinModalProps> = ({
@@ -26,119 +29,244 @@ export const WinModal: React.FC<WinModalProps> = ({
   onPlayAgain,
   onNewPuzzle,
   currentLevel = 1,
-  isLevelMode = false,
+  nextLevel = currentLevel + 1,
+  isLevelMode = true,
   onNextLevel,
+  mode = 'level',
 }) => {
+  const [isSharing, setIsSharing] = useState<boolean>(false);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
+  const handleShare = async () => {
+    try {
+      setIsSharing(true);
+      const outcome = await shareVictory({
+        level: currentLevel,
+        mode,
+        movesCount,
+        bestPossible,
+        history,
+        isClassicFounderRoute,
+      });
+
+      if (outcome === 'shared') {
+        setShareFeedback('Shared successfully!');
+      } else {
+        setShareFeedback('Snapshot downloaded & link copied!');
+      }
+
+      setTimeout(() => {
+        setShareFeedback(null);
+      }, 3500);
+    } catch {
+      setShareFeedback('Could not generate snapshot');
+      setTimeout(() => setShareFeedback(null), 3000);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handlePreviewSnapshot = async () => {
+    try {
+      const { dataUrl } = await createVictorySnapshot({
+        level: currentLevel,
+        mode,
+        movesCount,
+        bestPossible,
+        history,
+        isClassicFounderRoute,
+      });
+      setPreviewUrl(dataUrl);
+    } catch {
+      // ignore
+    }
+  };
+
+  const isOptimal = movesCount <= bestPossible;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 transition-opacity backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs transition-opacity animate-fadeIn select-none">
       <div
-        className="relative w-full max-w-[380px] bg-[var(--paper-2)] rounded-[20px] border border-[var(--border)] p-6 text-[var(--ink)] flex flex-col gap-4 text-left shadow-2xl"
+        className="relative w-full max-w-[400px] bg-[var(--paper-2)] rounded-[24px] border border-[var(--border)] p-5 sm:p-6 text-[var(--ink)] flex flex-col gap-4 text-left shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="win-headline"
       >
+        {/* Subtle decorative celebratory sparkles */}
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-36 h-36 bg-[var(--ink)]/5 rounded-full blur-2xl pointer-events-none" />
+
         {/* Close [x] button */}
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 w-9 h-9 rounded-[12px] flex items-center justify-center text-[var(--ink)] opacity-65 hover:opacity-100 hover:bg-[var(--paper)] transition cursor-pointer"
+          className="absolute top-4 right-4 w-8 h-8 rounded-[12px] flex items-center justify-center text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer z-10"
         >
           <X className="w-5 h-5 stroke-[1.5]" />
         </button>
 
-        <div className="pr-8">
-          <div className="flex items-center gap-2 mb-1">
-            {isLevelMode && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-sans font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ink)] text-[var(--paper)]">
-                <Trophy className="w-3 h-3" /> Level {currentLevel} Complete
+        {/* Header Celebration */}
+        <div className="flex flex-col gap-1.5 pr-8">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--ink)] text-[var(--paper)] shadow-2xs">
+              <Sparkles className="w-3 h-3 fill-current" />
+              {isLevelMode ? `Level ${currentLevel} Passed` : '1708 Solved'}
+            </span>
+            {isOptimal && (
+              <span className="text-[11px] font-medium text-[var(--ink-secondary)] border border-[var(--border)] px-2 py-0.5 rounded-full">
+                ★ Optimal
               </span>
             )}
           </div>
+
           <h2
             id="win-headline"
-            className="font-serif text-[26px] font-semibold tracking-[-0.02em] text-[var(--ink)] leading-tight"
+            className="font-serif text-[28px] sm:text-[30px] font-bold tracking-tight text-[var(--ink)] leading-none mt-1"
           >
-            {isLevelMode ? `Level ${currentLevel} Solved!` : 'Target 1708 Reached.'}
+            {isLevelMode ? `Level ${currentLevel}` : '1708'}
           </h2>
-          <p className="mt-1 text-[14px] text-[var(--ink-secondary)]">
-            Completed in <span className="text-[var(--ink)] font-semibold tabular-nums">{movesCount}</span>{' '}
-            {movesCount === 1 ? 'move' : 'moves'}.{' '}
-            <span>Optimal: <span className="tabular-nums font-medium text-[var(--ink)]">{bestPossible}</span>.</span>
+
+          <p className="text-[13px] text-[var(--ink-secondary)] leading-relaxed">
+            Solved in <span className="text-[var(--ink)] font-semibold tabular-nums">{movesCount}</span> moves · Best possible is{' '}
+            <span className="text-[var(--ink)] font-medium tabular-nums">{bestPossible}</span>
           </p>
         </div>
 
-        {/* Founder route note */}
+        {/* Founder route achievement */}
         {isClassicFounderRoute && (
-          <div className="p-3 bg-[var(--paper)] border border-[var(--border)] rounded-[12px] text-left">
-            <span className="text-[13px] text-[var(--ink)] font-semibold block">
-              The founder route
+          <div className="p-3 bg-[var(--paper)] border border-[var(--border)] rounded-[14px] text-left">
+            <span className="text-[12px] text-[var(--ink)] font-semibold block">
+              The Founder Route
             </span>
-            <p className="text-[13px] text-[var(--ink)] opacity-65 mt-0.5 leading-relaxed">
-              You found the founder's route. Respect from Asim Nawaz.
+            <p className="text-[12px] text-[var(--ink-secondary)] mt-0.5 leading-relaxed">
+              You discovered the founder's classic route. Respect from Asim Nawaz.
             </p>
           </div>
         )}
 
-        {/* Moves sequence */}
+        {/* Math Steps Sequence */}
         {history.length > 0 && (
-          <div className="text-left bg-[var(--paper)] p-3 rounded-[12px] border border-[var(--border)] max-h-32 overflow-y-auto space-y-1 text-[13px]">
-            <div className="text-[12px] font-medium text-[var(--ink-secondary)] pb-1 border-b border-[var(--border)]">
-              Sequence ({history.length} {history.length === 1 ? 'step' : 'steps'})
+          <div className="bg-[var(--paper)] p-3 rounded-[14px] border border-[var(--border)] text-[12px]">
+            <div className="flex items-center justify-between font-medium text-[var(--ink-secondary)] pb-1.5 border-b border-[var(--border)]">
+              <span>Sequence ({history.length} {history.length === 1 ? 'move' : 'moves'})</span>
+              <span className="text-[11px] opacity-75">Target: 1708</span>
             </div>
-            {history.map((m, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between tabular-nums text-[var(--ink-secondary)]"
-              >
-                <span>
-                  {idx + 1}.{' '}
-                  {m.op === 'SQ'
-                    ? `${m.inputs[0]}²`
-                    : m.op === 'POW'
-                    ? `${m.inputs[0]}^${m.inputs[0]}`
-                    : m.op === 'ADD'
-                    ? `${m.inputs[0]} + ${m.inputs[1]}`
-                    : m.op === 'SUB'
-                    ? `|${m.inputs[0]} - ${m.inputs[1]}|`
-                    : `${m.inputs[0]} × ${m.inputs[1]}`}
-                </span>
-                <span className="text-[var(--ink)] font-medium">= {m.result}</span>
-              </div>
-            ))}
+            <div className="max-h-28 overflow-y-auto space-y-1 pt-1.5">
+              {history.map((m, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between tabular-nums text-[var(--ink-secondary)] text-[12px]"
+                >
+                  <span>
+                    <span className="opacity-60 mr-1.5">{idx + 1}.</span>
+                    {m.op === 'SQ'
+                      ? `${m.inputs[0]}²`
+                      : m.op === 'POW'
+                      ? `${m.inputs[0]}^${m.inputs[0]}`
+                      : m.op === 'ADD'
+                      ? `${m.inputs[0]} + ${m.inputs[1]}`
+                      : m.op === 'SUB'
+                      ? `|${m.inputs[0]} - ${m.inputs[1]}|`
+                      : `${m.inputs[0]} × ${m.inputs[1]}`}
+                  </span>
+                  <span className="text-[var(--ink)] font-semibold">= {m.result}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Action Buttons: Next Level, Replay */}
-        <div className="space-y-2 pt-1">
+        {/* Share feedback toast */}
+        {shareFeedback && (
+          <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] text-[12px] font-medium text-[var(--ink)] animate-fadeIn">
+            <Check className="w-3.5 h-3.5 stroke-[2]" />
+            <span>{shareFeedback}</span>
+          </div>
+        )}
+
+        {/* Image Snapshot Preview Modal */}
+        {previewUrl && (
+          <div className="p-2.5 bg-[var(--paper)] border border-[var(--border)] rounded-[14px] flex flex-col gap-2">
+            <div className="flex items-center justify-between text-[11px] text-[var(--ink-secondary)]">
+              <span>1708 Victory Snapshot Preview</span>
+              <button
+                onClick={() => setPreviewUrl(null)}
+                className="hover:text-[var(--ink)] cursor-pointer"
+              >
+                Hide
+              </button>
+            </div>
+            <img
+              src={previewUrl}
+              alt="1708 Victory Snapshot"
+              className="w-full rounded-lg border border-[var(--border)] shadow-sm max-h-48 object-contain bg-black"
+            />
+          </div>
+        )}
+
+        {/* THREE EXACT USER-REQUESTED ACTIONS:
+            1. "Level 'x'" (Next Level)
+            2. "Play Again"
+            3. "Share" (creates image snapshot with 1708 branding)
+        */}
+        <div className="flex flex-col gap-2 pt-1">
+          {/* 1. Next Level / Primary Level Action */}
           {isLevelMode && onNextLevel ? (
             <button
               onClick={onNextLevel}
-              className="w-full h-11 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-medium rounded-[12px] flex items-center justify-center gap-2 transition text-[15px] cursor-pointer shadow-xs"
+              className="w-full h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-medium rounded-[14px] flex items-center justify-center gap-2 transition text-[15px] cursor-pointer shadow-xs"
             >
-              <span>Next Level (Level {currentLevel + 1})</span>
+              <span>Level {nextLevel}</span>
               <ArrowRight className="w-4 h-4 stroke-[2]" />
             </button>
           ) : onNewPuzzle ? (
             <button
               onClick={onNewPuzzle}
-              className="w-full h-11 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-medium rounded-[12px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-xs"
+              className="w-full h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-medium rounded-[14px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-xs"
             >
               New Puzzle
             </button>
           ) : null}
 
-          <button
-            onClick={onPlayAgain}
-            className="w-full h-11 border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] font-medium rounded-[12px] flex items-center justify-center gap-1.5 transition text-[14px] cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4 stroke-[1.5]" />
-            {isLevelMode ? `Replay Level ${currentLevel}` : 'Replay'}
-          </button>
+          {/* 2 & 3. "Play Again" and "Share" Row */}
+          <div className="grid grid-cols-2 gap-2">
+            {/* Play Again */}
+            <button
+              onClick={onPlayAgain}
+              className="h-11 border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] font-medium rounded-[14px] flex items-center justify-center gap-2 transition text-[14px] cursor-pointer"
+              title="Play this level again"
+            >
+              <RotateCcw className="w-4 h-4 stroke-[1.75]" />
+              <span>Play Again</span>
+            </button>
+
+            {/* Share (Generates and shares/downloads beautiful snapshot with 1708 branding) */}
+            <button
+              onClick={handleShare}
+              disabled={isSharing}
+              className="h-11 border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] font-medium rounded-[14px] flex items-center justify-center gap-2 transition text-[14px] cursor-pointer"
+              title="Share victory snapshot as image"
+            >
+              <Share2 className="w-4 h-4 stroke-[1.75]" />
+              <span>{isSharing ? 'Sharing...' : 'Share'}</span>
+            </button>
+          </div>
+
+          {/* Preview Snapshot Option */}
+          <div className="text-center pt-0.5">
+            <button
+              onClick={handlePreviewSnapshot}
+              className="text-[11px] text-[var(--ink-secondary)] hover:text-[var(--ink)] transition cursor-pointer underline underline-offset-2"
+            >
+              {previewUrl ? 'Refresh snapshot preview' : 'Preview shareable image card'}
+            </button>
+          </div>
         </div>
 
-        <div className="text-[12px] text-[var(--ink-secondary)] opacity-60 text-center pt-0.5 select-none">
+        {/* Minimal single-line branding */}
+        <div className="text-[11px] text-[var(--ink-secondary)] opacity-60 text-center select-none">
           1708 · By Asim Nawaz
         </div>
       </div>
