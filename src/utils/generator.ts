@@ -60,6 +60,40 @@ export interface GeneratedPuzzle {
   solveResult: SolveResult;
 }
 
+/**
+ * Generate a deterministic, verified solvable puzzle for Level 1..n
+ * Seed is derived mathematically from the level number.
+ */
+export function generateLevelPuzzle(level: number): GeneratedPuzzle {
+  const seed = (Math.imul(level, 2654435761) ^ 0x1708CAFE) >>> 0;
+  const rng = createMulberry32(seed);
+
+  let attempt = 0;
+  while (attempt < 500) {
+    attempt++;
+    const tiles = pick5Tiles(rng);
+    const tokens = generateTokenSplit(rng);
+
+    const solution = solveGame(tiles, tokens, { allowClassicFounderOnlyCheck: true });
+    if (solution.solvable && !solution.onlyFounderRoute) {
+      return {
+        tiles,
+        tokens,
+        solveResult: solution,
+      };
+    }
+  }
+
+  // Fallback guaranteed verified puzzle
+  const fallbackTiles = [2, 3, 4, 7, 10];
+  const fallbackTokens: Tokens = { ADD: 2, SUB: 2, MUL: 2, SQ: 2, POW: 1 };
+  return {
+    tiles: fallbackTiles,
+    tokens: fallbackTokens,
+    solveResult: solveGame(fallbackTiles, fallbackTokens),
+  };
+}
+
 export function generateDailyPuzzle(date: Date = new Date()): GeneratedPuzzle {
   const seed = dateToSeed(date);
   const rng = createMulberry32(seed);

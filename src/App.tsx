@@ -20,6 +20,7 @@ import { OpType, Tokens, Move } from './types/game';
 import { validateMove, TARGET, isFounderMove, hasLegalMove } from './utils/solver';
 import { getTokenAvailability, getTileAvailability } from './utils/availability';
 import {
+  generateLevelPuzzle,
   generateDailyPuzzle,
   generateClassicPuzzle,
   generateFounderPuzzle,
@@ -27,7 +28,14 @@ import {
   getDailyNumber,
   GeneratedPuzzle,
 } from './utils/generator';
-import { loadGameStats, recordWin, GameStats } from './utils/storage';
+import {
+  loadGameStats,
+  recordGameStart,
+  recordMoveMade,
+  recordWin,
+  recordLoss,
+  GameStats,
+} from './utils/storage';
 import { runAllSelfTests, SelfTestReport } from './utils/tests';
 import { sounds } from './utils/audio';
 import { HowToPlayModal } from './components/HowToPlayModal';
@@ -40,7 +48,7 @@ import { ConfirmNewPuzzleModal } from './components/ConfirmNewPuzzleModal';
 import { MenuDrawer } from './components/MenuDrawer';
 import { CubeLogo1708 } from './components/CubeLogo1708';
 
-type Mode = 'daily' | 'classic' | 'founder' | 'practice';
+type Mode = 'level' | 'daily' | 'classic' | 'founder' | 'practice';
 
 interface HistoryState {
   tiles: number[];
@@ -86,8 +94,10 @@ export default function App() {
     });
   }, []);
 
-  // Active Mode (Menu order: 1. Daily, 2. Classic, 3. Founder, 4. Practice)
-  const [mode, setMode] = useState<Mode>('daily');
+  // Active Mode (Default: Level progression mode, never resets)
+  const [mode, setMode] = useState<Mode>('level');
+  const [stats, setStats] = useState<GameStats>(() => loadGameStats());
+  const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
 
   // Puzzles state
   const [currentPuzzle, setCurrentPuzzle] = useState<GeneratedPuzzle | null>(null);
@@ -116,7 +126,6 @@ export default function App() {
   const [isSelfTestOpen, setIsSelfTestOpen] = useState<boolean>(false);
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState<boolean>(false);
   const [isConfirmNewPuzzleOpen, setIsConfirmNewPuzzleOpen] = useState<boolean>(false);
-  const [stats, setStats] = useState<GameStats>(loadGameStats());
   const [testReport, setTestReport] = useState<SelfTestReport>(() => runAllSelfTests());
 
   const dailyNumber = useMemo(() => getDailyNumber(new Date()), []);
@@ -163,11 +172,14 @@ export default function App() {
     setToastMessage(null);
   }, []);
 
-  // Initialize a puzzle by mode
+  // Initialize a puzzle by mode (level, daily, classic, founder, practice)
   const initPuzzle = useCallback(
-    (m: Mode) => {
+    (m: Mode, targetLevel?: number) => {
       let p: GeneratedPuzzle;
-      if (m === 'daily') {
+      if (m === 'level') {
+        const lvl = targetLevel ?? stats.currentLevel;
+        p = generateLevelPuzzle(lvl);
+      } else if (m === 'daily') {
         p = generateDailyPuzzle(new Date());
       } else if (m === 'founder') {
         p = generateFounderPuzzle();
@@ -190,9 +202,16 @@ export default function App() {
       setNewTileIndex(null);
       setToastMessage(null);
       setShowHint(false);
+      setIsGameStarted(false);
     },
-    []
+    [stats.currentLevel]
   );
+
+  // Advance to next level after victory
+  const handleNextLevel = useCallback(() => {
+    setIsResultDismissed(true);
+    initPuzzle('level', stats.currentLevel);
+  }, [initPuzzle, stats.currentLevel]);
 
   // Re-generate or initialize on mode change
   useEffect(() => {
@@ -233,19 +252,23 @@ export default function App() {
   }, [history, isWon]);
 
   const handleNewPuzzleRequest = useCallback(() => {
+    if (mode === 'level' && isWon) {
+      handleNextLevel();
+      return;
+    }
     if (history.length > 0 && !isWon && !isLost) {
       setIsConfirmNewPuzzleOpen(true);
     } else {
       initPuzzle(mode);
     }
-  }, [history.length, isWon, isLost, initPuzzle, mode]);
+  }, [mode, isWon, isLost, history.length, handleNextLevel, initPuzzle]);
 
   const startNewPuzzle = useCallback(() => {
     setIsConfirmNewPuzzleOpen(false);
     initPuzzle(mode);
   }, [initPuzzle, mode]);
 
-  // Execute a valid move
+  // Execute a valid move with real-time stats tracking
   const executeMove = useCallback(
     (op: OpType, inputs: number[], inputIndices: number[]) => {
       const validation = validateMove(op, inputs, mode === 'founder');
@@ -264,6 +287,16 @@ export default function App() {
 
       const res = validation.result!;
       const move: Move = { op, inputs, result: res };
+
+      // Real-time stats: Track game initiation on first move
+      if (!isGameStarted) {
+        setIsGameStarted(true);
+        const startedStats = recordGameStart();
+        setStats(startedStats);
+      }
+      // Real-time stats: Increment moves
+      const movedStats = recordMoveMade();
+      setStats(movedStats);
 
       // Save state before move
       setHistory(prev => [...prev, { tiles: [...tiles], tokens: { ...tokens }, move }]);
@@ -290,13 +323,17 @@ export default function App() {
         setIsLost(false);
         setIsResultDismissed(false);
         setWinningMove(move);
-        const updated = recordWin(mode, history.length + 1, new Date().toISOString().split('T')[0]);
+        // Real-time stats: Record win and advance Level
+        const { stats: updated } = recordWin(mode, stats.currentLevel, history.length + 1);
         setStats(updated);
       } else if (stateCheck.lost) {
         sounds.error();
         setIsLost(true);
         setIsWon(false);
         setIsResultDismissed(false);
+        // Real-time stats: Record loss
+        const updated = recordLoss();
+        setStats(updated);
         showToast(stateCheck.message || 'No legal moves left.');
       } else {
         sounds.combine();
@@ -304,7 +341,7 @@ export default function App() {
         setIsLost(false);
       }
     },
-    [mode, tiles, tokens, history.length, checkGameState, showToast]
+    [mode, tiles, tokens, history.length, checkGameState, showToast, isGameStarted, stats.currentLevel]
   );
 
   // Tile click handler
@@ -511,10 +548,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. MODE SELECTOR SUB-BAR (DAILY, CLASSIC, FOUNDER, PRACTICE) */}
+      {/* 2. MODE SELECTOR SUB-BAR (LEVEL PROGRESSION DEFAULT, DAILY, CLASSIC, PRACTICE) */}
       <div className="w-full max-w-xl mx-auto px-3 sm:px-6 pt-2 shrink-0">
         <div className="flex items-center justify-between bg-[var(--paper-2)] border border-[var(--border)] p-1 rounded-xl">
-          {(['daily', 'classic', 'founder', 'practice'] as Mode[]).map(m => {
+          {(['level', 'daily', 'classic', 'practice'] as Mode[]).map(m => {
             const isActive = mode === m;
             return (
               <button
@@ -522,11 +559,11 @@ export default function App() {
                 onClick={() => setMode(m)}
                 className={`flex-1 py-1 px-1.5 rounded-lg text-[12px] font-medium transition cursor-pointer capitalize text-center ${
                   isActive
-                    ? 'bg-[var(--ink)] text-[var(--paper)] shadow-2xs'
+                    ? 'bg-[var(--ink)] text-[var(--paper)] shadow-2xs font-semibold'
                     : 'text-[var(--ink-secondary)] hover:text-[var(--ink)]'
                 }`}
               >
-                {m === 'daily' ? `Daily #${dailyNumber}` : m}
+                {m === 'level' ? `Level ${stats.currentLevel}` : m === 'daily' ? `Daily #${dailyNumber}` : m}
               </button>
             );
           })}
@@ -540,7 +577,7 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-2.5">
               <span className="text-[11px] font-sans font-medium uppercase tracking-[0.16em] text-[var(--ink-secondary)] select-none">
-                Target
+                {mode === 'level' ? `Level ${stats.currentLevel}` : 'Target'}
               </span>
               <span className="font-serif text-[32px] sm:text-[40px] font-bold text-[var(--ink)] leading-none tabular-nums select-none">
                 1708
@@ -700,10 +737,16 @@ export default function App() {
           <button
             onClick={handleNewPuzzleRequest}
             className="h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 rounded-[14px] sm:rounded-[16px] font-medium text-[14px] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
-            aria-label="New puzzle"
+            aria-label="New puzzle or next level"
           >
             <Play className="w-4 h-4 stroke-[1.75] fill-current" />
-            <span>New Puzzle</span>
+            <span>
+              {mode === 'level' && isWon
+                ? `Next Level (${stats.currentLevel})`
+                : mode === 'level'
+                ? `Level ${stats.currentLevel}`
+                : 'New Puzzle'}
+            </span>
           </button>
         </div>
 
@@ -766,7 +809,7 @@ export default function App() {
         stats={stats}
       />
 
-      {/* WinModal */}
+      {/* WinModal with real Level progression */}
       <WinModal
         isOpen={isWon && !isResultDismissed}
         onClose={() => setIsResultDismissed(true)}
@@ -776,6 +819,9 @@ export default function App() {
         history={history.map(h => h.move)}
         onPlayAgain={handleRestart}
         onNewPuzzle={startNewPuzzle}
+        currentLevel={mode === 'level' ? Math.max(1, stats.currentLevel - 1) : stats.currentLevel}
+        isLevelMode={mode === 'level'}
+        onNextLevel={handleNextLevel}
       />
 
       {/* LossModal */}
