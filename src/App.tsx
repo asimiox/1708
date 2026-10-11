@@ -506,7 +506,7 @@ export default function App() {
         <div className="flex items-center justify-between">
           <div className="flex flex-col text-left">
             <h1 className="text-[44px] font-serif font-semibold tracking-[-0.02em] text-[var(--ink)] leading-none select-none">
-              1708
+              1708<span className="sr-only"> Game</span>
             </h1>
             <p className="text-[13px] text-[var(--ink)] opacity-65 mt-1">
               Developed by Asim Nawaz
