@@ -1,8 +1,10 @@
-# 1708
+# [Play 1708 Game — Official Website](https://1708game.vercel.app/)
 
-**1708** is a number puzzle game by Asim Nawaz. Combine number tiles using a limited set of operations and reach exactly **1708** before you run out of legal moves or operation tokens.
+**1708 Game** is a free mathematical number puzzle created by **Asim Nawaz**. Combine number tiles using a limited set of operations and reach exactly **1708** before you run out of legal moves or operation tokens.
 
-Play online: https://1708game.vercel.app/
+**Play the game:** https://1708game.vercel.app/  
+**How to play:** https://1708game.vercel.app/how-to-play-1708.html  
+**About the creator and game:** https://1708game.vercel.app/about.html
 
 ## Game modes
 
