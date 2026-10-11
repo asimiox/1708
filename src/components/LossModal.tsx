@@ -55,7 +55,7 @@ export const LossModal: React.FC<LossModalProps> = ({
           {onNewPuzzle && (
             <button
               onClick={onNewPuzzle}
-              className="w-full h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 font-medium rounded-[12px] flex items-center justify-center transition text-[15px] cursor-pointer"
+              className="w-full h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 font-medium rounded-[12px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-[0_2px_4px_rgba(184,86,43,0.22)]"
             >
               New Puzzle
             </button>
@@ -63,7 +63,7 @@ export const LossModal: React.FC<LossModalProps> = ({
 
           <button
             onClick={onRestart}
-            className="w-full h-11 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] text-[var(--ink)] font-medium rounded-[12px] flex items-center justify-center gap-1.5 transition text-[15px] cursor-pointer"
+            className="w-full h-11 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] text-[var(--ink)] font-medium rounded-[12px] flex items-center justify-center gap-1.5 transition text-[15px] cursor-pointer shadow-[0_1px_2px_rgba(30,24,19,0.05)]"
           >
             <RotateCcw className="w-4 h-4 stroke-[1.5]" />
             Replay
