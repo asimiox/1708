@@ -55,7 +55,7 @@ export const LossModal: React.FC<LossModalProps> = ({
           {onNewPuzzle && (
             <button
               onClick={onNewPuzzle}
-              className="w-full h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 font-medium rounded-[12px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-[0_2px_4px_rgba(184,86,43,0.22)]"
+              className="w-full h-11 bg-[var(--ink)] text-[var(--paper)] hover:bg-[var(--ink)]/90 active:bg-[var(--ink)]/80 font-medium rounded-[12px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-xs"
             >
               New Puzzle
             </button>

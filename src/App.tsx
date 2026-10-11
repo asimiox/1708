@@ -600,29 +600,16 @@ export default function App() {
               1708
             </div>
 
-            <div className="flex items-center gap-2 text-[12px] text-[var(--ink-secondary)] flex-wrap">
+            <div className="flex items-center gap-2 text-[12px] text-[var(--ink-secondary)]">
               <span className="tabular-nums font-medium">{history.length} {history.length === 1 ? 'move' : 'moves'}</span>
               <span>·</span>
               <span className="tabular-nums font-medium">{totalTokensLeft} left</span>
-              {currentPuzzle && !isLost && !isWon && (
-                <>
-                  <span>·</span>
-                  <button
-                    onClick={() => setShowHint(!showHint)}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] opacity-85 hover:opacity-100 transition cursor-pointer"
-                    title="Optimal moves hint"
-                  >
-                    <Lightbulb className="w-3 h-3 stroke-[1.5]" />
-                    <span>{showHint ? `Best: ${currentPuzzle.solveResult.minMoves}` : 'Optimal'}</span>
-                  </button>
-                </>
-              )}
             </div>
           </div>
 
-          {/* Right side: 3D "1708" interactive isometric blocks */}
+          {/* Right side: Minimal 3D "1708" interactive isometric blocks */}
           <div className="shrink-0 flex items-center justify-center pl-2">
-            <ThreeD1708 isWon={isWon} className="w-[144px] h-[82px]" />
+            <ThreeD1708 isWon={isWon} className="w-[144px] h-[78px]" />
           </div>
         </div>
 
@@ -654,7 +641,7 @@ export default function App() {
                 e.stopPropagation();
                 clearSelection();
               }}
-              className="text-[13px] font-medium text-[var(--accent)] hover:opacity-80 px-2.5 py-0.5 rounded-[12px] border border-[var(--border)] hover:bg-[var(--paper)] transition shrink-0 ml-2 cursor-pointer"
+              className="text-[13px] font-medium text-[var(--ink)] opacity-75 hover:opacity-100 px-2.5 py-0.5 rounded-[12px] border border-[var(--border)] hover:bg-[var(--paper)] transition shrink-0 ml-2 cursor-pointer"
               title="Clear selection"
             >
               Clear
@@ -690,11 +677,11 @@ export default function App() {
                   onClick={() => handleTileClick(idx)}
                   className={`relative min-h-[56px] h-14 rounded-[12px] font-semibold text-[18px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
                     isTarget
-                      ? 'bg-[var(--accent)] text-[var(--paper-2)] border-2 border-[var(--accent)] shadow-[0_2px_8px_rgba(184,86,43,0.25)]'
+                      ? 'bg-[var(--ink)] text-[var(--paper-2)] border-2 border-[var(--ink)] shadow-xs'
                       : isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)] ring-1 ring-[var(--accent)] shadow-xs scale-[1.02]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-1 ring-[var(--ink)] shadow-xs scale-[1.02]'
                       : isNew
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)]/50'
                       : isAvailable
                       ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 active:scale-[0.98]'
                       : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
@@ -734,7 +721,7 @@ export default function App() {
                   onClick={() => handleOpClick(op)}
                   className={`min-h-[52px] h-[54px] rounded-[12px] flex flex-col items-center justify-center transition-all duration-150 p-1 border cursor-pointer shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
                     isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)] ring-1 ring-[var(--accent)] shadow-xs scale-[1.02]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--ink)] ring-1 ring-[var(--ink)] shadow-xs scale-[1.02]'
                       : isAvailable
                       ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--surface-alt)]/30 active:scale-[0.98]'
                       : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
@@ -769,7 +756,7 @@ export default function App() {
 
           <button
             onClick={handleNewPuzzleRequest}
-            className="flex-1 min-h-[44px] h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 rounded-[12px] font-medium text-[15px] flex items-center justify-center gap-1.5 transition cursor-pointer"
+            className="flex-1 min-h-[44px] h-11 bg-[var(--ink)] text-[var(--paper)] hover:bg-[var(--ink)]/90 active:bg-[var(--ink)]/80 rounded-[12px] font-medium text-[15px] flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
             aria-label="New puzzle"
           >
             New Puzzle

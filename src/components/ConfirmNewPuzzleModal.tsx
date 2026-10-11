@@ -42,7 +42,7 @@ export const ConfirmNewPuzzleModal: React.FC<ConfirmNewPuzzleModalProps> = ({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 h-11 bg-[var(--accent)] text-[var(--paper-2)] hover:opacity-95 text-[15px] font-medium rounded-[12px] transition cursor-pointer"
+            className="flex-1 h-11 bg-[var(--ink)] text-[var(--paper)] hover:bg-[var(--ink)]/90 active:bg-[var(--ink)]/80 text-[15px] font-medium rounded-[12px] transition cursor-pointer shadow-xs"
           >
             Confirm
           </button>
