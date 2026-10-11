@@ -1,22 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CubeLogo1708Props {
   isWon?: boolean;
   className?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
+  darkMode?: boolean;
 }
 
 /**
  * Pure Monochrome 3D Cubes Logo for 1708
- * Fully adaptive across mobile (Android/iOS) and desktop screens.
- * Uses neutral grayscale (dark black + white) with zero warm/brown/orange tones.
+ * - In Dark Mode: 3D cubes are WHITE with black numerals.
+ * - In Light Mode: 3D cubes are BLACK with white numerals.
+ * Fully responsive across Android/iOS mobile and desktop.
  */
 export const CubeLogo1708: React.FC<CubeLogo1708Props> = ({
   isWon = false,
   className = '',
   size = 'md',
+  darkMode,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isDarkDOM, setIsDarkDOM] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return true;
+  });
+
+  // Observe DOM dark class changes if darkMode prop is not passed directly
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const check = () => {
+      setIsDarkDOM(document.documentElement.classList.contains('dark'));
+    };
+    check();
+
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Determine active theme mode
+  const isDark = darkMode !== undefined ? darkMode : isDarkDOM;
 
   const cubes = [
     { digit: '1', id: 'cube-1' },
@@ -51,28 +80,48 @@ export const CubeLogo1708: React.FC<CubeLogo1708Props> = ({
       >
         <defs>
           {/* Neutral soft shadow */}
-          <filter id="cube-mono-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id={`cube-mono-shadow-${isDark ? 'dark' : 'light'}`} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
           </filter>
 
-          {/* Pure neutral black/gray gradients (zero brown or chocolate) */}
-          <linearGradient id="cube-mono-front" x1="0%" y1="0%" x2="0%" y2="100%">
+          {/* DARK MODE: 3D Cubes are WHITE with black numerals */}
+          <linearGradient id="cube-white-front" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#EDEDED" />
+          </linearGradient>
+
+          <linearGradient id="cube-white-top" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#F5F5F5" />
+          </linearGradient>
+
+          <linearGradient id="cube-white-side" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#E5E5E5" />
+            <stop offset="100%" stopColor="#D4D4D4" />
+          </linearGradient>
+
+          <linearGradient id="cube-white-bevel" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#D0D0D0" stopOpacity="0.6" />
+          </linearGradient>
+
+          {/* LIGHT MODE: 3D Cubes are BLACK with white numerals */}
+          <linearGradient id="cube-black-front" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#222222" />
             <stop offset="100%" stopColor="#0F0F0F" />
           </linearGradient>
 
-          <linearGradient id="cube-mono-top" x1="0%" y1="100%" x2="100%" y2="0%">
+          <linearGradient id="cube-black-top" x1="0%" y1="100%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#404040" />
             <stop offset="100%" stopColor="#2E2E2E" />
           </linearGradient>
 
-          <linearGradient id="cube-mono-side" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="cube-black-side" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#141414" />
             <stop offset="100%" stopColor="#080808" />
           </linearGradient>
 
-          {/* Crisp facet outline */}
-          <linearGradient id="cube-mono-bevel" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id="cube-black-bevel" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#555555" stopOpacity="0.8" />
             <stop offset="100%" stopColor="#222222" stopOpacity="0.3" />
           </linearGradient>
@@ -92,6 +141,16 @@ export const CubeLogo1708: React.FC<CubeLogo1708Props> = ({
           const pTop = `${startX},${startY} ${startX + depthX},${startY - depthY} ${startX + cubeW + depthX},${startY - depthY} ${startX + cubeW},${startY}`;
           const pSide = `${startX + cubeW},${startY} ${startX + cubeW + depthX},${startY - depthY} ${startX + cubeW + depthX},${startY + cubeH - depthY} ${startX + cubeW},${startY + cubeH}`;
 
+          // Palette selection based on Dark vs Light theme
+          const topFill = isDark ? 'url(#cube-white-top)' : 'url(#cube-black-top)';
+          const sideFill = isDark ? 'url(#cube-white-side)' : 'url(#cube-black-side)';
+          const frontFill = isDark ? 'url(#cube-white-front)' : 'url(#cube-black-front)';
+          const frontStroke = isDark ? 'url(#cube-white-bevel)' : 'url(#cube-black-bevel)';
+          const topStroke = isDark ? '#D8D8D8' : '#454545';
+          const sideStroke = isDark ? '#C8C8C8' : '#242424';
+          const digitFill = isDark ? '#0A0A0A' : '#FFFFFF';
+          const shadowColor = isDark ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.22)';
+
           return (
             <g
               key={item.id}
@@ -100,21 +159,21 @@ export const CubeLogo1708: React.FC<CubeLogo1708Props> = ({
               onMouseEnter={() => setHoveredIndex(idx)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              {/* Neutral drop shadow */}
+              {/* Drop shadow */}
               <ellipse
                 cx={startX + cubeW / 2 + depthX / 2}
                 cy={startY + cubeH + 2.5 * scale - lift * 0.3}
                 rx={cubeW * 0.55}
                 ry={2.5 * scale}
-                fill="rgba(0, 0, 0, 0.35)"
-                filter="url(#cube-mono-shadow)"
+                fill={shadowColor}
+                filter={`url(#cube-mono-shadow-${isDark ? 'dark' : 'light'})`}
               />
 
               {/* 1. Top Face */}
               <polygon
                 points={pTop}
-                fill="url(#cube-mono-top)"
-                stroke="#454545"
+                fill={topFill}
+                stroke={topStroke}
                 strokeWidth="0.5"
                 strokeLinejoin="round"
               />
@@ -122,8 +181,8 @@ export const CubeLogo1708: React.FC<CubeLogo1708Props> = ({
               {/* 2. Side Face */}
               <polygon
                 points={pSide}
-                fill="url(#cube-mono-side)"
-                stroke="#242424"
+                fill={sideFill}
+                stroke={sideStroke}
                 strokeWidth="0.5"
                 strokeLinejoin="round"
               />
@@ -136,16 +195,16 @@ export const CubeLogo1708: React.FC<CubeLogo1708Props> = ({
                 height={cubeH}
                 rx={2 * scale}
                 ry={2 * scale}
-                fill="url(#cube-mono-front)"
-                stroke="url(#cube-mono-bevel)"
+                fill={frontFill}
+                stroke={frontStroke}
                 strokeWidth="0.7"
               />
 
-              {/* 4. Digit */}
+              {/* 4. Digit: Black in dark mode, White in light mode */}
               <text
                 x={startX + cubeW / 2}
                 y={startY + cubeH / 2 + 1}
-                fill="#FFFFFF"
+                fill={digitFill}
                 fontSize={cubeW * 0.62}
                 fontWeight="700"
                 fontFamily="'Bodoni Moda', 'Playfair Display', Didot, 'Times New Roman', Georgia, serif"

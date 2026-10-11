@@ -14,7 +14,6 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Undo2,
 } from 'lucide-react';
 import { OpType, Tokens, Move } from './types/game';
 import { validateMove, TARGET, isFounderMove, hasLegalMove } from './utils/solver';
@@ -234,22 +233,6 @@ export default function App() {
     setNewTileIndex(null);
     setToastMessage(null);
   }, [currentPuzzle]);
-
-  // Undo last move
-  const handleUndo = useCallback(() => {
-    if (history.length === 0 || isWon) return;
-    sounds.tap();
-    const lastState = history[history.length - 1];
-    setTiles(lastState.tiles);
-    setTokens(lastState.tokens);
-    setHistory(prev => prev.slice(0, -1));
-    setSelectedOp(null);
-    setSelectedTileIndices([]);
-    setIsLost(false);
-    setIsWon(false);
-    setIsResultDismissed(false);
-    setToastMessage(null);
-  }, [history, isWon]);
 
   const handleNewPuzzleRequest = useCallback(() => {
     if (mode === 'level' && isWon) {
@@ -504,7 +487,7 @@ export default function App() {
               title="1708 - Number Puzzle"
               aria-label="1708 3D Cubes Logo"
             >
-              <CubeLogo1708 isWon={isWon} size="sm" />
+              <CubeLogo1708 isWon={isWon} size="sm" darkMode={darkMode} />
             </button>
           </div>
 
@@ -710,29 +693,16 @@ export default function App() {
           </div>
         </div>
 
-        {/* Action Row: Restart, Undo, New Puzzle */}
+        {/* Action Row: Restart & New Puzzle (No Undo action in any mode) */}
         <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0 pt-0.5">
-          <div className="flex gap-1.5">
-            <button
-              onClick={handleRestart}
-              className="flex-1 h-11 sm:h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--surface-alt)] rounded-[14px] sm:rounded-[16px] font-medium text-[14px] text-[var(--ink)] flex items-center justify-center gap-1.5 transition cursor-pointer"
-              aria-label="Restart puzzle"
-            >
-              <RotateCcw className="w-4 h-4 stroke-[1.75]" />
-              <span>Restart</span>
-            </button>
-            {history.length > 0 && (
-              <button
-                onClick={handleUndo}
-                className="px-3 h-11 sm:h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--surface-alt)] rounded-[14px] sm:rounded-[16px] font-medium text-[13px] text-[var(--ink)] flex items-center justify-center gap-1 transition cursor-pointer"
-                title="Undo last move"
-                aria-label="Undo move"
-              >
-                <Undo2 className="w-3.5 h-3.5 stroke-[1.75]" />
-                <span className="hidden xs:inline">Undo</span>
-              </button>
-            )}
-          </div>
+          <button
+            onClick={handleRestart}
+            className="h-11 sm:h-12 border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--surface-alt)] rounded-[14px] sm:rounded-[16px] font-medium text-[14px] text-[var(--ink)] flex items-center justify-center gap-1.5 transition cursor-pointer"
+            aria-label="Restart puzzle"
+          >
+            <RotateCcw className="w-4 h-4 stroke-[1.75]" />
+            <span>Restart</span>
+          </button>
 
           <button
             onClick={handleNewPuzzleRequest}
