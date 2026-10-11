@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm Editorial Palette (Light Mode - Bookish, tactile, cognitive-calm flow state) */
-  --paper: #F6F1E7;
+  /* Warm Editorial Palette (#F7F3EA background, #25231F charcoal text, #B8562B terracotta) */
+  --paper: #F7F3EA;
   --paper-2: #FFFDF9;
   --surface: #FFFDF9;
   --surface-alt: #EFE9DC;
 
   /* Editorial Ink & Typography */
-  --ink: #1E1813;
-  --ink-secondary: rgba(30, 24, 19, 0.65);
-  --ink-muted: rgba(30, 24, 19, 0.48);
-  --ink-dimmed: rgba(30, 24, 19, 0.28);
-  --border: rgba(30, 24, 19, 0.12);
-  --border-subtle: rgba(30, 24, 19, 0.07);
+  --ink: #25231F;
+  --ink-secondary: #706C66;
+  --ink-muted: #8E8A83;
+  --ink-dimmed: rgba(37, 35, 31, 0.28);
+  --border: rgba(37, 35, 31, 0.12);
+  --border-subtle: rgba(37, 35, 31, 0.07);
 
-  /* Spiced Terracotta / Bookcloth Amber Accent */
+  /* Spiced Terracotta Accent */
   --accent: #B8562B;
   --accent-light: rgba(184, 86, 43, 0.08);
   --accent-subtle: rgba(184, 86, 43, 0.18);

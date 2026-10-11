@@ -31,6 +31,7 @@ import { WinModal } from './components/WinModal';
 import { LossModal } from './components/LossModal';
 import { SelfTestModal } from './components/SelfTestModal';
 import { ConfirmNewPuzzleModal } from './components/ConfirmNewPuzzleModal';
+import { ThreeD1708 } from './components/ThreeD1708';
 
 type Mode = 'daily' | 'classic' | 'founder' | 'practice';
 
@@ -581,40 +582,47 @@ export default function App() {
 
       {/* Main Gameplay */}
       <main className="w-full flex-1 flex flex-col justify-between py-3 gap-3 min-h-0 text-left">
-        {/* 2. Target Card */}
-        <div className="rounded-[12px] bg-[var(--paper-2)] text-[var(--ink)] p-4 border border-[var(--border)] flex items-center justify-between shrink-0">
-          <div>
-            <div className="text-[13px] text-[var(--ink)] opacity-65">
-              Target number
+        {/* 2. Target Card with 3D 1708 element on the right */}
+        <div className="rounded-[14px] bg-[var(--paper-2)] text-[var(--ink)] p-4 border border-[var(--border)] shadow-[0_1px_3px_rgba(37,35,31,0.04)] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex flex-col justify-between min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--ink-secondary)]">
+                Target number
+              </span>
+              {mode === 'founder' && (
+                <span className="text-[11px] font-medium text-[var(--accent)] bg-[var(--accent-light)] px-1.5 py-0.5 rounded-[6px]">
+                  7 × 244 blocked
+                </span>
+              )}
             </div>
-            <div className="text-[40px] font-serif font-semibold tracking-[-0.02em] text-[var(--ink)] leading-none py-1 tabular-nums">
+
+            <div className="text-[38px] font-serif font-semibold tracking-[-0.02em] text-[var(--ink)] leading-tight py-0.5 tabular-nums select-none">
               1708
             </div>
-            <div className="text-[13px] text-[var(--ink)] opacity-65 flex items-center gap-1.5 mt-0.5">
-              <span>{history.length} {history.length === 1 ? 'move' : 'moves'}</span>
+
+            <div className="flex items-center gap-2 text-[12px] text-[var(--ink-secondary)] flex-wrap">
+              <span className="tabular-nums font-medium">{history.length} {history.length === 1 ? 'move' : 'moves'}</span>
               <span>·</span>
-              <span>{totalTokensLeft} {totalTokensLeft === 1 ? 'token' : 'tokens'} left</span>
+              <span className="tabular-nums font-medium">{totalTokensLeft} left</span>
+              {currentPuzzle && !isLost && !isWon && (
+                <>
+                  <span>·</span>
+                  <button
+                    onClick={() => setShowHint(!showHint)}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] opacity-85 hover:opacity-100 transition cursor-pointer"
+                    title="Optimal moves hint"
+                  >
+                    <Lightbulb className="w-3 h-3 stroke-[1.5]" />
+                    <span>{showHint ? `Best: ${currentPuzzle.solveResult.minMoves}` : 'Optimal'}</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="text-right flex flex-col items-end gap-1.5">
-            {mode === 'founder' && (
-              <span className="text-[13px] text-[var(--accent)] font-medium">
-                7 × 244 blocked
-              </span>
-            )}
-            {currentPuzzle && !isLost && !isWon && (
-              <button
-                onClick={() => setShowHint(!showHint)}
-                className="text-[13px] text-[var(--ink)] opacity-65 hover:opacity-100 flex items-center gap-1.5 px-3 py-1 rounded-[12px] border border-[var(--border)] bg-[var(--paper-2)] hover:bg-[var(--paper)] transition cursor-pointer"
-              >
-                <Lightbulb className="w-3.5 h-3.5 stroke-[1.5]" />
-                <span>{showHint ? `Best: ${currentPuzzle.solveResult.minMoves}` : 'Optimal'}</span>
-              </button>
-            )}
-            <div className="text-[13px] text-[var(--ink)] opacity-65">
-              5 tiles · 9 tokens
-            </div>
+          {/* Right side: 3D "1708" interactive isometric blocks */}
+          <div className="shrink-0 flex items-center justify-center pl-2">
+            <ThreeD1708 isWon={isWon} className="w-[144px] h-[82px]" />
           </div>
         </div>
 
@@ -656,7 +664,7 @@ export default function App() {
 
         {/* 4. TILES: 5 tiles, rounded 12px, tabular-nums */}
         <div className="flex flex-col gap-1.5 shrink-0">
-          <div className="flex items-center justify-between px-1 text-[13px] text-[var(--ink)] opacity-65">
+          <div className="flex items-center justify-between px-1 text-[13px] text-[var(--ink-secondary)]">
             <span>Tiles ({tiles.length})</span>
             <span className="text-[13px]">Reach 1708</span>
           </div>
@@ -680,16 +688,16 @@ export default function App() {
                 <button
                   key={`${idx}-${val}`}
                   onClick={() => handleTileClick(idx)}
-                  className={`relative min-h-[56px] h-14 rounded-[12px] font-medium text-[17px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border ${
+                  className={`relative min-h-[56px] h-14 rounded-[12px] font-semibold text-[18px] flex flex-col items-center justify-center transition-all duration-150 select-none cursor-pointer border shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
                     isTarget
-                      ? 'bg-[var(--accent)] text-[var(--paper-2)] border-2 border-[var(--accent)]'
+                      ? 'bg-[var(--accent)] text-[var(--paper-2)] border-2 border-[var(--accent)] shadow-[0_2px_8px_rgba(184,86,43,0.25)]'
                       : isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)] ring-1 ring-[var(--accent)] shadow-xs scale-[1.02]'
                       : isNew
                       ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)]'
                       : isAvailable
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]'
-                      : 'opacity-35 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 active:scale-[0.98]'
+                      : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
                   }`}
                   aria-label={`Tile ${val}`}
                 >
@@ -702,7 +710,7 @@ export default function App() {
 
         {/* 5. TOKENS: 9 operation tokens */}
         <div className="flex flex-col gap-1.5 shrink-0">
-          <div className="flex items-center justify-between px-1 text-[13px] text-[var(--ink)] opacity-65">
+          <div className="flex items-center justify-between px-1 text-[13px] text-[var(--ink-secondary)]">
             <span>Tokens ({totalTokensLeft} left)</span>
             <span className="text-[13px]">1 per move</span>
           </div>
@@ -724,20 +732,22 @@ export default function App() {
                 <button
                   key={op}
                   onClick={() => handleOpClick(op)}
-                  className={`min-h-[50px] h-13 rounded-[12px] flex flex-col items-center justify-center transition-all duration-150 p-1 border cursor-pointer ${
+                  className={`min-h-[52px] h-[54px] rounded-[12px] flex flex-col items-center justify-center transition-all duration-150 p-1 border cursor-pointer shadow-[0_1px_2px_rgba(37,35,31,0.03)] ${
                     isSelected
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)]'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border-2 border-[var(--accent)] ring-1 ring-[var(--accent)] shadow-xs scale-[1.02]'
                       : isAvailable
-                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]'
-                      : 'opacity-35 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
+                      ? 'bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--ink)]/50 hover:bg-[var(--surface-alt)]/30 active:scale-[0.98]'
+                      : 'opacity-30 bg-[var(--paper-2)] text-[var(--ink)] border border-[var(--border)] cursor-not-allowed'
                   }`}
                   aria-label={`${op} token (${count} remaining)`}
                 >
-                  <div className="text-[13px] font-medium leading-none">{op}</div>
-                  <div className="text-[11px] text-[var(--ink)] opacity-65 leading-tight mt-0.5">
+                  <div className="text-[14px] font-semibold leading-none tabular-nums">
                     {op === 'ADD' ? '+' : op === 'SUB' ? '−' : op === 'MUL' ? '×' : op === 'SQ' ? 'x²' : 'xˣ'}
                   </div>
-                  <div className="mt-0.5 text-[11px] tabular-nums text-[var(--ink)] opacity-65">
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--ink-secondary)] leading-tight mt-0.5 font-medium">
+                    {op}
+                  </div>
+                  <div className="mt-0.5 text-[11px] tabular-nums text-[var(--ink-secondary)] font-medium">
                     ×{count}
                   </div>
                 </button>
