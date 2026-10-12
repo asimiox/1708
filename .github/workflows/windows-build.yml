@@ -1,0 +1,36 @@
+name: Windows CMD and PowerShell build
+
+on:
+  push:
+    paths:
+      - "termux/1708.c"
+      - ".github/workflows/windows-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up MSYS2 GCC
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: mingw-w64-ucrt-x86_64-gcc
+
+      - name: Compile 1708.exe
+        shell: msys2 {0}
+        run: gcc termux/1708.c -std=c11 -O2 -Wall -Wextra -o 1708.exe
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: 1708-windows
+          path: 1708.exe
+          if-no-files-found: error
