@@ -55,6 +55,26 @@ clang termux/1708.c -O2 -Wall -Wextra -o 1708
 ./1708
 ```
 
+### Windows (CMD / PowerShell)
+
+A GitHub Actions workflow now builds a Windows executable automatically when the native C source or workflow changes.
+
+1. Open the repository's [Actions page](https://github.com/asimiox/1708/actions/workflows/windows-build.yml).
+2. Open the latest successful **Windows CMD and PowerShell build** run.
+3. Under **Artifacts**, download `1708-windows` and extract `1708.exe`.
+4. Open CMD or PowerShell in the extracted folder and run:
+
+```powershell
+.\\1708.exe
+```
+
+No compiler is needed on the PC just to run the downloaded executable. To build it locally instead, install GCC (for example through MSYS2) and run:
+
+```powershell
+gcc termux/1708.c -std=c11 -O2 -Wall -Wextra -o 1708.exe
+.\\1708.exe
+```
+
 Before requesting official Termux packaging, compile and test the program on-device, then add packaging metadata and verify the native rules against the web implementation.
 
 ## Attribution
