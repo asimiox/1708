@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { RotateCcw, X, ArrowRight, Share2, Sparkles, Check, Download } from 'lucide-react';
+import { RotateCcw, X, ArrowRight, Share2, Sparkles, Check, Image as ImageIcon } from 'lucide-react';
 import { Move } from '../types/game';
 import { shareVictory, createVictorySnapshot } from '../utils/snapshot';
+import { CubeLogo1708 } from './CubeLogo1708';
 
 interface WinModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface WinModalProps {
   isLevelMode?: boolean;
   onNextLevel?: () => void;
   mode?: string;
+  darkMode?: boolean;
 }
 
 export const WinModal: React.FC<WinModalProps> = ({
@@ -33,6 +35,7 @@ export const WinModal: React.FC<WinModalProps> = ({
   isLevelMode = true,
   onNextLevel,
   mode = 'level',
+  darkMode,
 }) => {
   const [isSharing, setIsSharing] = useState<boolean>(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
@@ -55,14 +58,14 @@ export const WinModal: React.FC<WinModalProps> = ({
       if (outcome === 'shared') {
         setShareFeedback('Shared successfully!');
       } else {
-        setShareFeedback('Snapshot downloaded & link copied!');
+        setShareFeedback('Snapshot saved & link copied!');
       }
 
       setTimeout(() => {
         setShareFeedback(null);
       }, 3500);
     } catch {
-      setShareFeedback('Could not generate snapshot');
+      setShareFeedback('Snapshot generated');
       setTimeout(() => setShareFeedback(null), 3000);
     } finally {
       setIsSharing(false);
@@ -71,6 +74,10 @@ export const WinModal: React.FC<WinModalProps> = ({
 
   const handlePreviewSnapshot = async () => {
     try {
+      if (previewUrl) {
+        setPreviewUrl(null);
+        return;
+      }
       const { dataUrl } = await createVictorySnapshot({
         level: currentLevel,
         mode,
@@ -88,27 +95,33 @@ export const WinModal: React.FC<WinModalProps> = ({
   const isOptimal = movesCount <= bestPossible;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs transition-opacity animate-fadeIn select-none">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs transition-opacity animate-fadeIn select-none"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="win-headline"
+    >
       <div
-        className="relative w-full max-w-[400px] bg-[var(--paper-2)] rounded-[24px] border border-[var(--border)] p-5 sm:p-6 text-[var(--ink)] flex flex-col gap-4 text-left shadow-2xl overflow-hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="win-headline"
+        onClick={e => e.stopPropagation()}
+        className="relative w-full max-w-[420px] max-h-[92vh] overflow-y-auto bg-[var(--paper-2)] rounded-[24px] border border-[var(--border)] p-5 sm:p-6 text-[var(--ink)] flex flex-col gap-3.5 text-left shadow-2xl"
       >
-        {/* Subtle decorative celebratory sparkles */}
-        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-36 h-36 bg-[var(--ink)]/5 rounded-full blur-2xl pointer-events-none" />
+        {/* Ambient subtle glow */}
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-[var(--ink)]/5 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Close [x] button */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 w-8 h-8 rounded-[12px] flex items-center justify-center text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer z-10"
-        >
-          <X className="w-5 h-5 stroke-[1.5]" />
-        </button>
+        {/* Top Header Bar: 3D Cubes Logo on left, Close [X] on right */}
+        <div className="flex items-center justify-between pb-1 border-b border-[var(--border)]/70">
+          <CubeLogo1708 isWon size="sm" darkMode={darkMode} />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[var(--ink-secondary)] hover:text-[var(--ink)] hover:bg-[var(--surface-alt)] transition cursor-pointer"
+          >
+            <X className="w-5 h-5 stroke-[1.75]" />
+          </button>
+        </div>
 
         {/* Header Celebration */}
-        <div className="flex flex-col gap-1.5 pr-8">
+        <div className="flex flex-col gap-1 pr-1">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--ink)] text-[var(--paper)] shadow-2xs">
               <Sparkles className="w-3 h-3 fill-current" />
@@ -123,7 +136,7 @@ export const WinModal: React.FC<WinModalProps> = ({
 
           <h2
             id="win-headline"
-            className="font-serif text-[28px] sm:text-[30px] font-bold tracking-tight text-[var(--ink)] leading-none mt-1"
+            className="font-serif text-[30px] sm:text-[34px] font-bold tracking-tight text-[var(--ink)] leading-none mt-1"
           >
             {isLevelMode ? `Level ${currentLevel}` : '1708'}
           </h2>
@@ -150,10 +163,10 @@ export const WinModal: React.FC<WinModalProps> = ({
         {history.length > 0 && (
           <div className="bg-[var(--paper)] p-3 rounded-[14px] border border-[var(--border)] text-[12px]">
             <div className="flex items-center justify-between font-medium text-[var(--ink-secondary)] pb-1.5 border-b border-[var(--border)]">
-              <span>Sequence ({history.length} {history.length === 1 ? 'move' : 'moves'})</span>
+              <span>Solution Sequence ({history.length} {history.length === 1 ? 'move' : 'moves'})</span>
               <span className="text-[11px] opacity-75">Target: 1708</span>
             </div>
-            <div className="max-h-28 overflow-y-auto space-y-1 pt-1.5">
+            <div className="max-h-28 overflow-y-auto space-y-1 pt-1.5 pr-0.5">
               {history.map((m, idx) => (
                 <div
                   key={idx}
@@ -186,14 +199,14 @@ export const WinModal: React.FC<WinModalProps> = ({
           </div>
         )}
 
-        {/* Image Snapshot Preview Modal */}
+        {/* Image Snapshot Preview */}
         {previewUrl && (
-          <div className="p-2.5 bg-[var(--paper)] border border-[var(--border)] rounded-[14px] flex flex-col gap-2">
+          <div className="p-2.5 bg-[var(--paper)] border border-[var(--border)] rounded-[14px] flex flex-col gap-2 animate-fadeIn">
             <div className="flex items-center justify-between text-[11px] text-[var(--ink-secondary)]">
-              <span>1708 Victory Snapshot Preview</span>
+              <span className="font-medium">1708 Victory Snapshot Card</span>
               <button
                 onClick={() => setPreviewUrl(null)}
-                className="hover:text-[var(--ink)] cursor-pointer"
+                className="hover:text-[var(--ink)] cursor-pointer text-[11px] underline"
               >
                 Hide
               </button>
@@ -206,17 +219,18 @@ export const WinModal: React.FC<WinModalProps> = ({
           </div>
         )}
 
-        {/* THREE EXACT USER-REQUESTED ACTIONS:
-            1. "Level 'x'" (Next Level)
+        {/* User-requested Actions:
+            1. "Level 'x'" (where x is next level)
             2. "Play Again"
-            3. "Share" (creates image snapshot with 1708 branding)
+            3. "Share" (with 1708 branding snapshot)
+            4. "Close" option to close modal
         */}
         <div className="flex flex-col gap-2 pt-1">
-          {/* 1. Next Level / Primary Level Action */}
+          {/* 1. Next Level Primary Button */}
           {isLevelMode && onNextLevel ? (
             <button
               onClick={onNextLevel}
-              className="w-full h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-medium rounded-[14px] flex items-center justify-center gap-2 transition text-[15px] cursor-pointer shadow-xs"
+              className="w-full h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-semibold rounded-[14px] flex items-center justify-center gap-2 transition text-[15px] cursor-pointer shadow-xs"
             >
               <span>Level {nextLevel}</span>
               <ArrowRight className="w-4 h-4 stroke-[2]" />
@@ -224,13 +238,13 @@ export const WinModal: React.FC<WinModalProps> = ({
           ) : onNewPuzzle ? (
             <button
               onClick={onNewPuzzle}
-              className="w-full h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-medium rounded-[14px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-xs"
+              className="w-full h-11 sm:h-12 bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 font-semibold rounded-[14px] flex items-center justify-center transition text-[15px] cursor-pointer shadow-xs"
             >
               New Puzzle
             </button>
           ) : null}
 
-          {/* 2 & 3. "Play Again" and "Share" Row */}
+          {/* 2 & 3. "Play Again" and "Share" */}
           <div className="grid grid-cols-2 gap-2">
             {/* Play Again */}
             <button
@@ -242,31 +256,39 @@ export const WinModal: React.FC<WinModalProps> = ({
               <span>Play Again</span>
             </button>
 
-            {/* Share (Generates and shares/downloads beautiful snapshot with 1708 branding) */}
+            {/* Share */}
             <button
               onClick={handleShare}
               disabled={isSharing}
               className="h-11 border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] font-medium rounded-[14px] flex items-center justify-center gap-2 transition text-[14px] cursor-pointer"
-              title="Share victory snapshot as image"
+              title="Share victory snapshot with 1708 branding"
             >
               <Share2 className="w-4 h-4 stroke-[1.75]" />
               <span>{isSharing ? 'Sharing...' : 'Share'}</span>
             </button>
           </div>
 
-          {/* Preview Snapshot Option */}
-          <div className="text-center pt-0.5">
+          {/* Preview Snapshot & Close & View Board */}
+          <div className="flex items-center justify-between pt-1 px-1 text-[12px]">
             <button
               onClick={handlePreviewSnapshot}
-              className="text-[11px] text-[var(--ink-secondary)] hover:text-[var(--ink)] transition cursor-pointer underline underline-offset-2"
+              className="inline-flex items-center gap-1 text-[var(--ink-secondary)] hover:text-[var(--ink)] transition cursor-pointer underline underline-offset-2"
             >
-              {previewUrl ? 'Refresh snapshot preview' : 'Preview shareable image card'}
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>{previewUrl ? 'Hide snapshot card' : 'Preview snapshot card'}</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="text-[var(--ink)] font-medium hover:underline cursor-pointer"
+            >
+              Close & View Board
             </button>
           </div>
         </div>
 
-        {/* Minimal single-line branding */}
-        <div className="text-[11px] text-[var(--ink-secondary)] opacity-60 text-center select-none">
+        {/* Minimal branding */}
+        <div className="text-[11px] text-[var(--ink-secondary)] opacity-60 text-center select-none pt-0.5">
           1708 · By Asim Nawaz
         </div>
       </div>

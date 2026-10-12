@@ -14,6 +14,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import { OpType, Tokens, Move } from './types/game';
 import { validateMove, TARGET, isFounderMove, hasLegalMove } from './utils/solver';
@@ -96,6 +98,13 @@ export default function App() {
   // Active Mode (Default: Level progression mode, never resets)
   const [mode, setMode] = useState<Mode>('level');
   const [stats, setStats] = useState<GameStats>(() => loadGameStats());
+  const [currentLevelNumber, setCurrentLevelNumber] = useState<number>(() => {
+    const s = loadGameStats();
+    return Math.max(1, s.currentLevel);
+  });
+  const currentLevelRef = useRef<number>(currentLevelNumber);
+  currentLevelRef.current = currentLevelNumber;
+
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
 
   // Puzzles state
@@ -171,51 +180,48 @@ export default function App() {
     setToastMessage(null);
   }, []);
 
-  // Initialize a puzzle by mode (level, daily, classic, founder, practice)
-  const initPuzzle = useCallback(
-    (m: Mode, targetLevel?: number) => {
-      let p: GeneratedPuzzle;
-      if (m === 'level') {
-        const lvl = targetLevel ?? stats.currentLevel;
-        p = generateLevelPuzzle(lvl);
-      } else if (m === 'daily') {
-        p = generateDailyPuzzle(new Date());
-      } else if (m === 'founder') {
-        p = generateFounderPuzzle();
-      } else if (m === 'classic') {
-        p = generateClassicPuzzle();
-      } else {
-        p = generatePracticePuzzle();
-      }
+  // Stable puzzle initializer (No stats.currentLevel dependency)
+  const initPuzzle = useCallback((m: Mode, targetLevel?: number) => {
+    let p: GeneratedPuzzle;
+    if (m === 'level') {
+      const lvl = targetLevel ?? currentLevelRef.current;
+      p = generateLevelPuzzle(lvl);
+    } else if (m === 'daily') {
+      p = generateDailyPuzzle(new Date());
+    } else if (m === 'founder') {
+      p = generateFounderPuzzle();
+    } else if (m === 'classic') {
+      p = generateClassicPuzzle();
+    } else {
+      p = generatePracticePuzzle();
+    }
 
-      setCurrentPuzzle(p);
-      setTiles(p.tiles);
-      setTokens(p.tokens);
-      setSelectedOp(null);
-      setSelectedTileIndices([]);
-      setHistory([]);
-      setIsWon(false);
-      setIsLost(false);
-      setIsResultDismissed(false);
-      setWinningMove(null);
-      setNewTileIndex(null);
-      setToastMessage(null);
-      setShowHint(false);
-      setIsGameStarted(false);
-    },
-    [stats.currentLevel]
-  );
+    setCurrentPuzzle(p);
+    setTiles(p.tiles);
+    setTokens(p.tokens);
+    setSelectedOp(null);
+    setSelectedTileIndices([]);
+    setHistory([]);
+    setIsWon(false);
+    setIsLost(false);
+    setIsResultDismissed(false);
+    setWinningMove(null);
+    setNewTileIndex(null);
+    setToastMessage(null);
+    setShowHint(false);
+    setIsGameStarted(false);
+  }, []);
 
   // Advance to next level after victory
-  const handleNextLevel = useCallback(() => {
+  const handleNextLevel = useCallback((lvlToAdvance?: number) => {
+    const nextLvl = lvlToAdvance ?? (currentLevelRef.current + 1);
+    setCurrentLevelNumber(nextLvl);
+    currentLevelRef.current = nextLvl;
+    setIsWon(false);
+    setIsLost(false);
     setIsResultDismissed(true);
-    initPuzzle('level', stats.currentLevel);
-  }, [initPuzzle, stats.currentLevel]);
-
-  // Re-generate or initialize on mode change
-  useEffect(() => {
-    initPuzzle(mode);
-  }, [mode, initPuzzle]);
+    initPuzzle('level', nextLvl);
+  }, [initPuzzle]);
 
   // Restart puzzle
   const handleRestart = useCallback(() => {
@@ -234,9 +240,26 @@ export default function App() {
     setToastMessage(null);
   }, [currentPuzzle]);
 
+  // Play again on current level
+  const handlePlayAgain = useCallback(() => {
+    setIsWon(false);
+    setIsLost(false);
+    setIsResultDismissed(true);
+    if (mode === 'level') {
+      initPuzzle('level', currentLevelRef.current);
+    } else {
+      handleRestart();
+    }
+  }, [mode, handleRestart, initPuzzle]);
+
+  // Re-generate or initialize ONLY on mode change
+  useEffect(() => {
+    initPuzzle(mode, currentLevelRef.current);
+  }, [mode, initPuzzle]);
+
   const handleNewPuzzleRequest = useCallback(() => {
     if (mode === 'level' && isWon) {
-      handleNextLevel();
+      handleNextLevel(currentLevelNumber + 1);
       return;
     }
     if (history.length > 0 && !isWon && !isLost) {
@@ -244,7 +267,7 @@ export default function App() {
     } else {
       initPuzzle(mode);
     }
-  }, [mode, isWon, isLost, history.length, handleNextLevel, initPuzzle]);
+  }, [mode, isWon, isLost, history.length, handleNextLevel, currentLevelNumber, initPuzzle]);
 
   const startNewPuzzle = useCallback(() => {
     setIsConfirmNewPuzzleOpen(false);
@@ -307,7 +330,7 @@ export default function App() {
         setIsResultDismissed(false);
         setWinningMove(move);
         // Real-time stats: Record win and advance Level
-        const { stats: updated } = recordWin(mode, stats.currentLevel, history.length + 1);
+        const { stats: updated } = recordWin(mode, currentLevelRef.current, history.length + 1);
         setStats(updated);
       } else if (stateCheck.lost) {
         sounds.error();
@@ -324,7 +347,7 @@ export default function App() {
         setIsLost(false);
       }
     },
-    [mode, tiles, tokens, history.length, checkGameState, showToast, isGameStarted, stats.currentLevel]
+    [mode, tiles, tokens, history.length, checkGameState, showToast, isGameStarted]
   );
 
   // Tile click handler
@@ -546,7 +569,7 @@ export default function App() {
                     : 'text-[var(--ink-secondary)] hover:text-[var(--ink)]'
                 }`}
               >
-                {m === 'level' ? `Level ${stats.currentLevel}` : m === 'daily' ? `Daily #${dailyNumber}` : m}
+                {m === 'level' ? `Level ${currentLevelNumber}` : m === 'daily' ? `Daily #${dailyNumber}` : m}
               </button>
             );
           })}
@@ -560,7 +583,7 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-2.5">
               <span className="text-[11px] font-sans font-medium uppercase tracking-[0.16em] text-[var(--ink-secondary)] select-none">
-                {mode === 'level' ? `Level ${stats.currentLevel}` : 'Target'}
+                {mode === 'level' ? `Level ${currentLevelNumber}` : 'Target'}
               </span>
               <span className="font-serif text-[32px] sm:text-[40px] font-bold text-[var(--ink)] leading-none tabular-nums select-none">
                 1708
@@ -592,6 +615,43 @@ export default function App() {
             </span>
           </div>
         </div>
+
+        {/* Victory state banner when board is solved */}
+        {isWon && (
+          <div className="w-full bg-[var(--paper-2)] border-2 border-[var(--ink)] rounded-[16px] p-2.5 sm:p-3 flex items-center justify-between gap-2 shrink-0 animate-fadeIn shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-full bg-[var(--ink)] text-[var(--paper)] flex items-center justify-center font-bold text-[12px]">
+                ✓
+              </span>
+              <div className="flex flex-col text-left">
+                <span className="text-[13px] font-bold text-[var(--ink)] leading-none">
+                  {mode === 'level' ? `Level ${currentLevelNumber} Passed!` : '1708 Solved!'}
+                </span>
+                <span className="text-[11px] text-[var(--ink-secondary)] mt-0.5">
+                  Solved in {history.length} moves
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setIsResultDismissed(false)}
+                className="px-2.5 py-1 text-[12px] font-medium rounded-lg border border-[var(--border)] bg-[var(--paper)] hover:bg-[var(--surface-alt)] text-[var(--ink)] cursor-pointer transition"
+              >
+                Victory Screen
+              </button>
+              {mode === 'level' && (
+                <button
+                  onClick={() => handleNextLevel(currentLevelNumber + 1)}
+                  className="px-3 py-1 text-[12px] font-semibold rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:opacity-80 cursor-pointer transition shadow-2xs flex items-center gap-1"
+                >
+                  <span>Level {currentLevelNumber + 1}</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2]" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tiles: 5 tiles */}
         <div className="flex flex-col gap-1 shrink-0">
@@ -712,9 +772,9 @@ export default function App() {
             <Play className="w-4 h-4 stroke-[1.75] fill-current" />
             <span>
               {mode === 'level' && isWon
-                ? `Next Level (${stats.currentLevel})`
+                ? `Next Level (${currentLevelNumber + 1})`
                 : mode === 'level'
-                ? `Level ${stats.currentLevel}`
+                ? `Level ${currentLevelNumber}`
                 : 'New Puzzle'}
             </span>
           </button>
@@ -787,13 +847,14 @@ export default function App() {
         bestPossible={currentPuzzle?.solveResult.minMoves ?? 0}
         isClassicFounderRoute={isClassicFounderRoute}
         history={history.map(h => h.move)}
-        onPlayAgain={handleRestart}
+        onPlayAgain={handlePlayAgain}
         onNewPuzzle={startNewPuzzle}
-        currentLevel={mode === 'level' ? Math.max(1, stats.currentLevel - 1) : stats.currentLevel}
-        nextLevel={mode === 'level' ? stats.currentLevel : stats.currentLevel + 1}
+        currentLevel={mode === 'level' ? currentLevelNumber : undefined}
+        nextLevel={currentLevelNumber + 1}
         isLevelMode={mode === 'level'}
-        onNextLevel={handleNextLevel}
+        onNextLevel={() => handleNextLevel(currentLevelNumber + 1)}
         mode={mode}
+        darkMode={darkMode}
       />
 
       {/* LossModal */}
