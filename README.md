@@ -12,7 +12,7 @@
 You do not need to install a compiler or manually download/extract a ZIP. Open **PowerShell** on Windows with an internet connection, paste this command, and press Enter:
 
 ```powershell
-curl.exe -fLsS https://github.com/asimiox/1708/releases/latest/download/1708.exe -o "$env:TEMP\\1708.exe"; if ($LASTEXITCODE -eq 0) { & "$env:TEMP\\1708.exe" }
+curl.exe -fLsS https://github.com/asimiox/1708/releases/latest/download/1708.exe -o "$env:TEMP\1708.exe"; if ($LASTEXITCODE -eq 0) { & "$env:TEMP\1708.exe" }
 ```
 
 This downloads the Windows executable from the latest GitHub release to your temporary folder and starts it. The first run requires an internet connection. Only run executables from a release you trust.
@@ -22,12 +22,12 @@ This downloads the Windows executable from the latest GitHub release to your tem
 On Windows versions that include `curl.exe`, open CMD and run:
 
 ```cmd
-curl.exe -fLsS https://github.com/asimiox/1708/releases/latest/download/1708.exe -o "%TEMP%\\1708.exe" && "%TEMP%\\1708.exe"
+curl.exe -fLsS https://github.com/asimiox/1708/releases/latest/download/1708.exe -o "%TEMP%\1708.exe" && "%TEMP%\1708.exe"
 ```
 
 ### Download manually instead
 
-If you prefer not to use a terminal command, open the [latest release](https://github.com/asimiox/1708/releases/latest), download `1708.exe), and run it.
+If you prefer not to use a terminal command, open the [latest release](https://github.com/asimiox/1708/releases/latest), download `1708.exe`, and run it.
 
 ## Game modes
 
@@ -85,7 +85,7 @@ A GitHub Actions workflow builds the Windows executable. See the [Windows build 
 
 ```powershell
 gcc termux/1708.c -std=c11 -O2 -Wall -Wextra -o 1708.exe
-.\\1708.exe
+.\1708.exe
 ```
 
 Before requesting official Termux packaging, compile and test the program on-device, then add packaging metadata and verify the native rules against the web implementation.
