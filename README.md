@@ -1,10 +1,33 @@
 # [Play 1708 Game — Official Website](https://1708game.vercel.app/)
 
-**1708 Game** is a free mathematical number puzzle created by **Asim Nawaz**. Combine number tiles using a limited set of operations and reach exactly **1708** before you run out of legal moves or operation tokens.
+**1708** is a free mathematical number puzzle created by **Asim Nawaz**. Combine number tiles using a limited set of operations and reach exactly **1708** before you run out of legal moves or operation tokens.
 
-**Play the game:** https://1708game.vercel.app/  
+**Play in your browser:** https://1708game.vercel.app/  
 **How to play:** https://1708game.vercel.app/how-to-play-1708.html  
-**About the creator and game:** https://1708game.vercel.app/about.html
+**About the creator and game:** https://1708game.vercel.app/about.html  
+**Latest Windows release:** https://github.com/asimiox/1708/releases/latest
+
+## Run 1708 on Windows with one command
+
+You do not need to install a compiler or manually download/extract a ZIP. Open **PowerShell** on Windows with an internet connection, paste this command, and press Enter:
+
+```powershell
+curl.exe -fLsS https://github.com/asimiox/1708/releases/latest/download/1708.exe -o "$env:TEMP\\1708.exe"; if ($LASTEXITCODE -eq 0) { & "$env:TEMP\\1708.exe" }
+```
+
+This downloads the Windows executable from the latest GitHub release to your temporary folder and starts it. The first run requires an internet connection. Only run executables from a release you trust.
+
+### Command Prompt (CMD)
+
+On Windows versions that include `curl.exe`, open CMD and run:
+
+```cmd
+curl.exe -fLsS https://github.com/asimiox/1708/releases/latest/download/1708.exe -o "%TEMP%\\1708.exe" && "%TEMP%\\1708.exe"
+```
+
+### Download manually instead
+
+If you prefer not to use a terminal command, open the [latest release](https://github.com/asimiox/1708/releases/latest), download `1708.exe), and run it.
 
 ## Game modes
 
@@ -21,7 +44,7 @@ The in-game rules and source implementation are authoritative; this README is a 
 
 ## Development
 
-This repository currently contains the web implementation built with React, TypeScript, and Vite.
+This repository contains the web implementation built with React, TypeScript, and Vite.
 
 Install dependencies and run locally:
 
@@ -46,29 +69,19 @@ npm run lint
 
 An initial terminal-native C port is available at [`termux/1708.c`](termux/1708.c). It supports Classic, Founder, and Practice starting boards, the five operations, token spending, and win/loss checks. It is **not yet feature-parity verified**: Daily mode, solvability-aware puzzle generation, and a native regression test suite are not implemented. Treat it as an initial port, not a verified replacement for the web game.
 
-Build on Termux with Clang:
+### Build locally on Termux
+
+Install Clang and compile:
 
 ```sh
 pkg install clang
-gcc --version # optional compiler check; Termux normally provides clang
 clang termux/1708.c -O2 -Wall -Wextra -o 1708
 ./1708
 ```
 
-### Windows (CMD / PowerShell)
+### Windows build from source
 
-A GitHub Actions workflow now builds a Windows executable automatically when the native C source or workflow changes.
-
-1. Open the repository's [Actions page](https://github.com/asimiox/1708/actions/workflows/windows-build.yml).
-2. Open the latest successful **Windows CMD and PowerShell build** run.
-3. Under **Artifacts**, download `1708-windows` and extract `1708.exe`.
-4. Open CMD or PowerShell in the extracted folder and run:
-
-```powershell
-.\\1708.exe
-```
-
-No compiler is needed on the PC just to run the downloaded executable. To build it locally instead, install GCC (for example through MSYS2) and run:
+A GitHub Actions workflow builds the Windows executable. See the [Windows build workflow](https://github.com/asimiox/1708/actions/workflows/windows-build.yml). For local builds, install GCC (for example through MSYS2) and run:
 
 ```powershell
 gcc termux/1708.c -std=c11 -O2 -Wall -Wextra -o 1708.exe
